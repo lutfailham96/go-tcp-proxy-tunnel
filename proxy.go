@@ -21,6 +21,7 @@ type Proxy struct {
 	sHost                Host
 	lPayload             []byte
 	rPayload             []byte
+	connBuff             []byte
 	lInitialized         bool
 	rInitialized         bool
 	bytesReceived        uint64
@@ -40,6 +41,7 @@ func (p *Proxy) New(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Pr
 		rAddr:                rAddr,
 		lPayload:             make([]byte, 0),
 		rPayload:             make([]byte, 0),
+		connBuff:             make([]byte, 0),
 		lInitialized:         false,
 		rInitialized:         false,
 		erred:                false,
@@ -119,40 +121,18 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 			p.err()
 			return
 		}
-		b := buffer[:n]
+		p.connBuff = buffer[:n]
 		if isLocal {
-			if !p.lInitialized {
-				fmt.Printf("CONN #%d %s >> %s >> %s\n", p.connId, src.RemoteAddr(), p.conn.LocalAddr(), dst.RemoteAddr())
-				if p.reverseProxy {
-					if strings.Contains(strings.ToLower(string(b)), "upgrade: websocket") {
-						fmt.Printf("CONN #%d connection upgrade to Websocket\n", p.connId)
-						b = []byte("HTTP/1.1 101 Switching Protocols\r\n\r\n")
-						p.wsUpgradeInitialized = true
-					}
-				} else {
-					if bytes.Contains(b, []byte("CONNECT ")) {
-						b = p.lPayload
-						fmt.Println(string(b))
-					}
-				}
-				p.lInitialized = true
-			}
+			p.handleInboundData(src, dst)
 		} else {
-			if !p.rInitialized {
-				fmt.Printf("CONN #%d %s << %s << %s\n", p.connId, dst.RemoteAddr(), p.conn.LocalAddr(), src.RemoteAddr())
-				if bytes.Contains(b, []byte("HTTP/1.")) && !p.reverseProxy {
-					b = p.rPayload
-					fmt.Println(string(b))
-				}
-				p.rInitialized = true
-			}
+			p.handleOutboundData(src, dst)
 		}
 		if p.reverseProxy && p.wsUpgradeInitialized {
-			n, err = src.Write(b)
+			n, err = src.Write(p.connBuff)
 			p.wsUpgradeInitialized = false
 			go p.handleForwardData(dst, src)
 		} else {
-			n, err = dst.Write(b)
+			n, err = dst.Write(p.connBuff)
 		}
 		if err != nil {
 			//fmt.Printf("Cannot write buffer to destination '%s'", err)
@@ -165,6 +145,36 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 		} else {
 			p.bytesReceived += uint64(n)
 		}
+	}
+}
+
+func (p *Proxy) handleInboundData(src, dst net.Conn) {
+	if !p.lInitialized {
+		fmt.Printf("CONN #%d %s >> %s >> %s\n", p.connId, src.RemoteAddr(), p.conn.LocalAddr(), dst.RemoteAddr())
+		if p.reverseProxy {
+			if strings.Contains(strings.ToLower(string(p.connBuff)), "upgrade: websocket") {
+				fmt.Printf("CONN #%d connection upgrade to Websocket\n", p.connId)
+				p.connBuff = []byte("HTTP/1.1 101 Switching Protocols\r\n\r\n")
+				p.wsUpgradeInitialized = true
+			}
+		} else {
+			if bytes.Contains(p.connBuff, []byte("CONNECT ")) {
+				p.connBuff = p.lPayload
+				fmt.Println(string(p.connBuff))
+			}
+		}
+		p.lInitialized = true
+	}
+}
+
+func (p *Proxy) handleOutboundData(src, dst net.Conn) {
+	if !p.rInitialized {
+		fmt.Printf("CONN #%d %s << %s << %s\n", p.connId, dst.RemoteAddr(), p.conn.LocalAddr(), src.RemoteAddr())
+		if bytes.Contains(p.connBuff, []byte("HTTP/1.")) && !p.reverseProxy {
+			p.connBuff = p.rPayload
+			fmt.Println(string(p.connBuff))
+		}
+		p.rInitialized = true
 	}
 }
 
