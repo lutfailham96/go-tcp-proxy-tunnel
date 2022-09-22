@@ -44,7 +44,12 @@ func main() {
 		fmt.Printf("Failed to open local port to listen: %s", err)
 		return
 	}
-	fmt.Printf("go-tcp-proxy proxing from %v to %v\n", lAddr, rAddr)
+	if *reverseProxyMode {
+		fmt.Println("Mode: reverse proxy")
+	} else {
+		fmt.Println("Mode: client proxy")
+	}
+	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", lAddr, rAddr)
 
 	var connId = uint64(0)
 
