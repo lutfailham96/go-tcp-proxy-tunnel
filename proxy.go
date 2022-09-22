@@ -7,12 +7,18 @@ import (
 	"strings"
 )
 
+type Host struct {
+	hostName string
+	port     string
+}
+
 type Proxy struct {
 	conn                 net.Conn
 	lConn                net.Conn
 	rConn                net.Conn
 	lAddr                *net.TCPAddr
 	rAddr                *net.TCPAddr
+	sHost                Host
 	lPayload             []byte
 	rPayload             []byte
 	lInitialized         bool
@@ -45,6 +51,10 @@ func (p *Proxy) New(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Pr
 }
 
 func (p *Proxy) SetlPayload(lPayload string) {
+	if p.sHost.hostName != "" {
+		lPayload = strings.Replace(lPayload, "[host]", fmt.Sprintf("%s", p.sHost.hostName), -1)
+		lPayload = strings.Replace(lPayload, "[host_port]", fmt.Sprintf("%s:%s", p.sHost.hostName, p.sHost.port), -1)
+	}
 	lPayload = strings.Replace(lPayload, "[crlf]", "\r\n", -1)
 	p.lPayload = []byte(lPayload)
 }
@@ -59,6 +69,14 @@ func (p *Proxy) SetrPayload(rPayload string) {
 
 func (p *Proxy) SetReverseProxy(enabled bool) {
 	p.reverseProxy = enabled
+}
+
+func (p *Proxy) SetServerHost(server string) {
+	sServer := strings.Split(server, ":")
+	p.sHost = Host{
+		hostName: sServer[0],
+		port:     sServer[1],
+	}
 }
 
 func (p *Proxy) Start() {
