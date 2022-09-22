@@ -5,6 +5,7 @@ import (
 	"fmt"
 	proxy "github.com/lutfailham96/go-tcp-proxy-tunnel"
 	"net"
+	"os"
 )
 
 var (
@@ -19,20 +20,11 @@ var (
 func main() {
 	flag.Parse()
 
-	lAddr, err := net.ResolveTCPAddr("tcp", *localAddr)
-	if err != nil {
-		fmt.Printf("Failed to resolve local address: %s", err)
-		return
-	}
-
-	rAddr, err := net.ResolveTCPAddr("tcp", *remoteAddr)
-	if err != nil {
-		fmt.Printf("Failed to resolve remote address: %s", err)
-		return
-	}
+	lAddr := resolveAddr(*localAddr)
+	rAddr := resolveAddr(*remoteAddr)
 
 	if *serverHost != "" {
-		_, err = net.ResolveTCPAddr("tcp", *serverHost)
+		_, err := net.ResolveTCPAddr("tcp", *serverHost)
 		if err != nil {
 			fmt.Printf("Failed to resolve remote address: %s", err)
 			return
@@ -51,8 +43,20 @@ func main() {
 	}
 	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", lAddr, rAddr)
 
-	var connId = uint64(0)
+	loopListener(listener, lAddr, rAddr)
+}
 
+func resolveAddr(addr string) *net.TCPAddr {
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		fmt.Printf("Failed to resolve local address: %s", err)
+		os.Exit(1)
+	}
+	return tcpAddr
+}
+
+func loopListener(listener net.Listener, lAddr, rAddr *net.TCPAddr) {
+	var connId = uint64(0)
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
