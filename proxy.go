@@ -92,10 +92,10 @@ func (p *Proxy) Start() {
 
 	fmt.Printf("CONN #%d opened %s >> %s\n", p.connId, p.lAddr, p.rAddr)
 
-	go p.handleForwardData(p.lConn, p.rConn)
 	if !p.reverseProxy {
 		go p.handleForwardData(p.rConn, p.lConn)
 	}
+	go p.handleForwardData(p.lConn, p.rConn)
 	<-p.errSig
 	fmt.Printf("CONN #%d closed (%d bytes sent, %d bytes received)\n", p.connId, p.bytesSent, p.bytesReceived)
 }
