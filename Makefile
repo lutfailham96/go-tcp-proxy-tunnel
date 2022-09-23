@@ -1,4 +1,4 @@
-.PHONY: format build
+.PHONY: format build clean
 
 format:
 	find . -name "*.go" -not -path ".git/*" | xargs gofmt -s -d -w
@@ -10,3 +10,7 @@ build:
 
 install:
 	@cp -ap ${PWD}/go-tcp-proxy-tunnel /usr/local/bin
+
+clean:
+	@echo "Cleaning unused file"
+	rm go-tcp-proxy-tunnel
