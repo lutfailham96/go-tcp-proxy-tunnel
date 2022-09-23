@@ -143,3 +143,4 @@ $ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localh
 ### Todo
 
 * Add unit test
+* Add build & linting CI using GitHub workflow
