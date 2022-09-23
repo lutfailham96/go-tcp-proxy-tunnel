@@ -37,14 +37,20 @@ func main() {
 		fmt.Printf("Failed to open local port to listen: %s", err)
 		return
 	}
+	proxyMode := "client proxy"
+	buffSize := *bufferSize
 	if *reverseProxyMode {
-		fmt.Println("Mode: reverse proxy")
-	} else {
-		fmt.Println("Mode: client proxy")
+		proxyMode = "reverse proxy"
 	}
+	if buffSize == 0 {
+		buffSize = 0xffff
+	}
+
+	fmt.Printf("Mode: %s", proxyMode)
+	fmt.Printf("Buffer size: %d", buffSize)
 	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", lAddr, rAddr)
 
-	loopListener(listener, lAddr, rAddr, *bufferSize)
+	loopListener(listener, lAddr, rAddr, buffSize)
 }
 
 func resolveAddr(addr string) *net.TCPAddr {
