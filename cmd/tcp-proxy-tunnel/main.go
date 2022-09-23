@@ -15,6 +15,7 @@ var (
 	reverseProxyMode = flag.Bool("rp", false, "enable reverse proxy mode")
 	localPayload     = flag.String("ip", "", "local TCP payload replacer")
 	remotePayload    = flag.String("op", "", "remote TCP payload replacer")
+	bufferSize       = flag.Uint64("bs", 0, "connection buffer size")
 )
 
 func main() {
@@ -43,7 +44,7 @@ func main() {
 	}
 	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", lAddr, rAddr)
 
-	loopListener(listener, lAddr, rAddr)
+	loopListener(listener, lAddr, rAddr, *bufferSize)
 }
 
 func resolveAddr(addr string) *net.TCPAddr {
@@ -55,7 +56,7 @@ func resolveAddr(addr string) *net.TCPAddr {
 	return tcpAddr
 }
 
-func loopListener(listener net.Listener, lAddr, rAddr *net.TCPAddr) {
+func loopListener(listener net.Listener, lAddr, rAddr *net.TCPAddr, buffSize uint64) {
 	var connId = uint64(0)
 	for {
 		conn, err := listener.Accept()
@@ -69,6 +70,9 @@ func loopListener(listener net.Listener, lAddr, rAddr *net.TCPAddr) {
 		p = p.New(connId, conn, lAddr, rAddr)
 		if *serverHost != "" {
 			p.SetServerHost(*serverHost)
+		}
+		if buffSize > 0 {
+			p.SetBufferSize(buffSize)
 		}
 		p.SetlPayload(*localPayload)
 		p.SetrPayload(*remotePayload)
