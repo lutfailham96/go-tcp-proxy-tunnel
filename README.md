@@ -25,13 +25,23 @@ $ git clone https://github.com/lutfailham96/go-tcp-proxy-tunnel \
 
 ```
 $ go-tcp-proxy-tunnel --help
-Usage of tcp-proxy:
-  -l: "127.0.0.1:8082": local address
-  -r: "localhost:80": remote address
-  -s: "server address / sni address": server:443
-  -rp: "use as reverse proxy"
-  -op: "local TCP payload replacer"
-  -ip: "remote TCP payload replacer"
+Usage of go-tcp-proxy-tunnel:
+  -bs uint
+    	connection buffer size
+  -c string
+    	load config from JSON file
+  -ip string
+    	remote TCP payload replacer
+  -l string
+    	local address (default "127.0.0.1:8082")
+  -op string
+    	local TCP payload replacer
+  -r string
+    	remote address (default "127.0.0.1:443")
+  -rp
+    	enable reverse proxy mode
+  -s string
+    	server host address
 ```
 
 ### Server example
