@@ -61,7 +61,7 @@ server {
     ssl_certificate /etc/nginx/ssl/fullchain.pem;
     ssl_certificate_key /etc/nginx/ssl/privkey.pem;
 
-    server_name my-server.tld;
+    server_name my-server;
 
     location / {
         proxy_pass http://127.0.0.1:8082;
@@ -101,6 +101,33 @@ cert = /etc/stunnel/ssl/stunnel.pem
 Tunnel over SSH conneciton
 ```shell
 $ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localhost
+```
+
+### Config File Example
+
+**sever**
+```json
+{
+  "BufferSize": 65535,
+  "ReverseProxyMode": true,
+  "ProxyInfo": "reverse proxy",
+  "LocalAddress": "127.0.0.1:8082",
+  "RemoteAddress": "127.0.0.1:22"
+}
+```
+
+**client**
+```json
+{
+  "BufferSize": 65535,
+  "ReverseProxyMode": false,
+  "ProxyInfo": "client proxy",
+  "LocalAddress": "127.0.0.1:9999",
+  "RemoteAddress": "127.0.0.1:10443",
+  "LocalPayload": "GET ws://cloudflare.com HTTP/1.1[crlf]Host: [host][crlf]Connection: keep-alive[crlf]Upgrade: websocket[crlf][crlf]",
+  "RemotePayload": "HTTP/1.1 200 Connection Established[crlf][crlf]",
+  "ServerHost": "my-server:443"
+}
 ```
 
 ### Todo
