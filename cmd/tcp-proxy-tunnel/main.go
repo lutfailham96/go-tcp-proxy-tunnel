@@ -46,8 +46,8 @@ func main() {
 		buffSize = 0xffff
 	}
 
-	fmt.Printf("Mode: %s\n", proxyMode)
-	fmt.Printf("Buffer size: %d\n\n", buffSize)
+	fmt.Printf("Mode\t\t: %s\n", proxyMode)
+	fmt.Printf("Buffer size\t: %d\n\n", buffSize)
 	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", lAddr, rAddr)
 
 	loopListener(listener, lAddr, rAddr, buffSize)
