@@ -46,7 +46,7 @@ Usage of go-tcp-proxy-tunnel:
 
 ### Server example
 
-Accept incoming connection to use as SSH tunnel
+Accept incoming connection to use as `SSH` tunnel
 ```shell
 $ go-tcp-proxy-tunnel \
     -l 127.0.0.1:8082 \
@@ -59,7 +59,7 @@ Buffer size	: 65535
 go-tcp-proxy-tunnel proxing from 127.0.0.1:8082 to 127.0.0.1:22
 ```
 
-Nginx site configuration
+`nginx` site configuration
 ```
 server {
     listen 80;
@@ -97,7 +97,7 @@ $ go-tcp-proxy-tunnel \
 Proxying from 127.0.0.1:9999 to 104.15.50.1:443
 ```
 
-stunnel configuration
+`stunnel` configuration
 ```
 [ws]
 client = yes
@@ -108,7 +108,7 @@ cert = /etc/stunnel/ssl/stunnel.pem
 
 ```
 
-Tunnel over SSH conneciton
+Tunnel over `SSH` connection
 ```shell
 $ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localhost
 ```
@@ -138,6 +138,11 @@ $ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localh
   "RemotePayload": "HTTP/1.1 200 Connection Established[crlf][crlf]",
   "ServerHost": "my-server:443"
 }
+```
+
+Example run `go-tcp-proxy-tunnel` using config file
+```shell
+$ go-tcp-proxy-tunnel -c config.json
 ```
 
 ### Todo
