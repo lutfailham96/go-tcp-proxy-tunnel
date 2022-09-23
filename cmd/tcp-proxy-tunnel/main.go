@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	proxy "github.com/lutfailham96/go-tcp-proxy-tunnel"
@@ -16,13 +17,22 @@ var (
 	localPayload     = flag.String("op", "", "local TCP payload replacer")
 	remotePayload    = flag.String("ip", "", "remote TCP payload replacer")
 	bufferSize       = flag.Uint64("bs", 0, "connection buffer size")
+	configFile       = flag.String("c", "", "load config from JSON file")
 )
 
 func main() {
 	flag.Parse()
 
-	lAddr := resolveAddr(*localAddr)
-	rAddr := resolveAddr(*remoteAddr)
+	config := &proxy.Config{
+		ReverseProxyMode: *reverseProxyMode,
+		BufferSize:       *bufferSize,
+		LocalAddress:     *localAddr,
+		RemoteAddress:    *remoteAddr,
+		ServerHost:       *serverHost,
+		LocalPayload:     *localPayload,
+		RemotePayload:    *remotePayload,
+	}
+	parseConfig(config, *configFile)
 
 	if *serverHost != "" {
 		_, err := net.ResolveTCPAddr("tcp", *serverHost)
@@ -32,25 +42,17 @@ func main() {
 		}
 	}
 
-	listener, err := net.Listen("tcp", lAddr.String())
+	listener, err := net.Listen("tcp", config.LocalAddressTCP.String())
 	if err != nil {
 		fmt.Printf("Failed to open local port to listen: %s", err)
 		return
 	}
-	proxyMode := "client proxy"
-	buffSize := *bufferSize
-	if *reverseProxyMode {
-		proxyMode = "reverse proxy"
-	}
-	if buffSize == 0 {
-		buffSize = 0xffff
-	}
 
-	fmt.Printf("Mode\t\t: %s\n", proxyMode)
-	fmt.Printf("Buffer size\t: %d\n\n", buffSize)
-	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", lAddr, rAddr)
+	fmt.Printf("Mode\t\t: %s\n", config.ProxyInfo)
+	fmt.Printf("Buffer size\t: %d\n\n", config.BufferSize)
+	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP)
 
-	loopListener(listener, lAddr, rAddr, buffSize)
+	loopListener(listener, config)
 }
 
 func resolveAddr(addr string) *net.TCPAddr {
@@ -62,7 +64,7 @@ func resolveAddr(addr string) *net.TCPAddr {
 	return tcpAddr
 }
 
-func loopListener(listener net.Listener, lAddr, rAddr *net.TCPAddr, buffSize uint64) {
+func loopListener(listener net.Listener, config *proxy.Config) {
 	var connId = uint64(0)
 	for {
 		conn, err := listener.Accept()
@@ -73,16 +75,69 @@ func loopListener(listener net.Listener, lAddr, rAddr *net.TCPAddr, buffSize uin
 		connId += 1
 
 		var p *proxy.Proxy
-		p = p.New(connId, conn, lAddr, rAddr)
-		if *serverHost != "" {
-			p.SetServerHost(*serverHost)
+		p = p.New(connId, conn, config.LocalAddressTCP, config.RemoteAddressTCP)
+		if config.ServerHost != "" {
+			p.SetServerHost(config.ServerHost)
 		}
-		if buffSize > 0 {
-			p.SetBufferSize(buffSize)
+		if config.BufferSize > 0 {
+			p.SetBufferSize(config.BufferSize)
 		}
-		p.SetlPayload(*localPayload)
-		p.SetrPayload(*remotePayload)
-		p.SetReverseProxy(*reverseProxyMode)
+		p.SetlPayload(config.LocalPayload)
+		p.SetrPayload(config.RemotePayload)
+		p.SetReverseProxy(config.ReverseProxyMode)
 		go p.Start()
+	}
+}
+
+func parseConfig(config *proxy.Config, configFile string) {
+	if configFile != "" {
+		file, err := os.Open(configFile)
+		if err != nil {
+			fmt.Printf("Cannot open file '%s'", err)
+			os.Exit(1)
+			return
+		}
+		defer func(file *os.File) {
+			err := file.Close()
+			if err != nil {
+				fmt.Printf("Cannot close file '%s", err)
+				return
+			}
+		}(file)
+
+		jsonDecoder := json.NewDecoder(file)
+		err = jsonDecoder.Decode(config)
+		if err != nil {
+			fmt.Printf("Cannot decode config file '%s'", err)
+			os.Exit(1)
+			return
+		}
+	}
+
+	localAddress := *localAddr
+	if config.LocalAddress != "" {
+		localAddress = config.LocalAddress
+	}
+	config.LocalAddressTCP = resolveAddr(localAddress)
+
+	remoteAddress := *remoteAddr
+	if config.RemoteAddress != "" {
+		remoteAddress = config.RemoteAddress
+	}
+	config.RemoteAddressTCP = resolveAddr(remoteAddress)
+
+	serverHostAddr := *serverHost
+	if config.ServerHost != "" {
+		serverHostAddr = config.ServerHost
+	}
+	resolveAddr(serverHostAddr)
+
+	if config.BufferSize == 0 {
+		config.BufferSize = 0xffff
+	}
+
+	config.ProxyInfo = "client proxy"
+	if config.ReverseProxyMode {
+		config.ProxyInfo = "reverse proxy"
 	}
 }

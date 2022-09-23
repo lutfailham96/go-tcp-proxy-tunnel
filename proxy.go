@@ -13,6 +13,19 @@ type Host struct {
 	port     uint64
 }
 
+type Config struct {
+	BufferSize       uint64
+	ReverseProxyMode bool
+	ProxyInfo        string
+	LocalAddress     string
+	RemoteAddress    string
+	LocalAddressTCP  *net.TCPAddr
+	RemoteAddressTCP *net.TCPAddr
+	ServerHost       string
+	LocalPayload     string
+	RemotePayload    string
+}
+
 type Proxy struct {
 	conn                 net.Conn
 	lConn                net.Conn
