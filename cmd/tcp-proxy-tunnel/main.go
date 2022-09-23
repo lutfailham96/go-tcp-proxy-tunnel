@@ -13,8 +13,8 @@ var (
 	remoteAddr       = flag.String("r", "127.0.0.1:443", "remote address")
 	serverHost       = flag.String("s", "", "server host address")
 	reverseProxyMode = flag.Bool("rp", false, "enable reverse proxy mode")
-	localPayload     = flag.String("ip", "", "local TCP payload replacer")
-	remotePayload    = flag.String("op", "", "remote TCP payload replacer")
+	localPayload     = flag.String("op", "", "local TCP payload replacer")
+	remotePayload    = flag.String("ip", "", "remote TCP payload replacer")
 	bufferSize       = flag.Uint64("bs", 0, "connection buffer size")
 )
 
