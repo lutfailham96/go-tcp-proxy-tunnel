@@ -105,7 +105,7 @@ func (p *Proxy) SetBufferSize(buffSize *uint64) {
 }
 
 func (p *Proxy) Start() {
-	defer p.closeConnection(p.lConn)
+	defer p.closeConnection(&p.lConn)
 
 	var err error
 	p.rConn, err = net.DialTCP("tcp", nil, p.rAddr)
@@ -113,13 +113,13 @@ func (p *Proxy) Start() {
 		fmt.Printf("Cannot dial remote connection '%s'", err)
 		return
 	}
-	defer p.closeConnection(p.rConn)
+	defer p.closeConnection(&p.rConn)
 
 	fmt.Printf("CONN #%d opened %s >> %s\n", p.connId, p.lAddr, p.rAddr)
 
-	go p.handleForwardData(p.lConn, p.rConn)
+	go p.handleForwardData(&p.lConn, &p.rConn)
 	if !p.reverseProxy {
-		go p.handleForwardData(p.rConn, p.lConn)
+		go p.handleForwardData(&p.rConn, &p.lConn)
 	}
 	<-p.errSig
 	fmt.Printf("CONN #%d closed (%d bytes sent, %d bytes received)\n", p.connId, p.bytesSent, p.bytesReceived)
@@ -133,12 +133,12 @@ func (p *Proxy) err() {
 	p.erred = true
 }
 
-func (p *Proxy) handleForwardData(src, dst net.Conn) {
-	isLocal := src == p.lConn
+func (p *Proxy) handleForwardData(src, dst *net.Conn) {
+	isLocal := *src == p.lConn
 	buffer := make([]byte, p.buffSize)
 
 	for {
-		n, err := src.Read(buffer)
+		n, err := (*src).Read(buffer)
 		if err != nil {
 			//fmt.Printf("Cannot read buffer from source '%s'", err)
 			p.err()
@@ -151,11 +151,11 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 			p.handleOutboundData(src, dst, &connBuff)
 		}
 		if p.reverseProxy && p.wsUpgradeInitialized {
-			n, err = src.Write(connBuff)
+			n, err = (*src).Write(connBuff)
 			p.wsUpgradeInitialized = false
 			go p.handleForwardData(dst, src)
 		} else {
-			n, err = dst.Write(connBuff)
+			n, err = (*dst).Write(connBuff)
 		}
 		if err != nil {
 			//fmt.Printf("Cannot write buffer to destination '%s'", err)
@@ -171,12 +171,12 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 	}
 }
 
-func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
+func (p *Proxy) handleInboundData(src, dst *net.Conn, connBuff *[]byte) {
 	if p.lInitialized {
 		return
 	}
 
-	fmt.Printf("CONN #%d %s >> %s >> %s\n", p.connId, src.RemoteAddr(), p.conn.LocalAddr(), dst.RemoteAddr())
+	fmt.Printf("CONN #%d %s >> %s >> %s\n", p.connId, (*src).RemoteAddr(), p.conn.LocalAddr(), (*dst).RemoteAddr())
 	if p.reverseProxy {
 		if strings.Contains(strings.ToLower(string(*connBuff)), "upgrade: websocket") {
 			fmt.Printf("CONN #%d connection upgrade to Websocket\n", p.connId)
@@ -193,12 +193,12 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 	p.lInitialized = true
 }
 
-func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
+func (p *Proxy) handleOutboundData(src, dst *net.Conn, connBuff *[]byte) {
 	if p.rInitialized {
 		return
 	}
 
-	fmt.Printf("CONN #%d %s << %s << %s\n", p.connId, dst.RemoteAddr(), p.conn.LocalAddr(), src.RemoteAddr())
+	fmt.Printf("CONN #%d %s << %s << %s\n", p.connId, (*dst).RemoteAddr(), p.conn.LocalAddr(), (*src).RemoteAddr())
 	if bytes.Contains(*connBuff, []byte("HTTP/1.")) && !p.reverseProxy {
 		*connBuff = p.rPayload
 		fmt.Println(string(*connBuff))
@@ -207,8 +207,8 @@ func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 	p.rInitialized = true
 }
 
-func (p *Proxy) closeConnection(conn net.Conn) {
-	err := conn.Close()
+func (p *Proxy) closeConnection(conn *net.Conn) {
+	err := (*conn).Close()
 	if err != nil {
 		fmt.Printf("Cannot close connection '%s'", err)
 		return

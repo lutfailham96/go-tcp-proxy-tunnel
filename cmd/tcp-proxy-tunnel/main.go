@@ -44,7 +44,7 @@ func main() {
 	fmt.Printf("Buffer size\t: %d\n\n", config.BufferSize)
 	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP)
 
-	loopListener(listener, config)
+	loopListener(&listener, config)
 }
 
 func resolveAddr(addr *string) *net.TCPAddr {
@@ -60,12 +60,12 @@ func resolveAddr(addr *string) *net.TCPAddr {
 	return tcpAddr
 }
 
-func loopListener(listener net.Listener, config *proxy.Config) {
+func loopListener(listener *net.Listener, config *proxy.Config) {
 	var connId = uint64(0)
 	var conn net.Conn
 	var err error
 	for {
-		conn, err = listener.Accept()
+		conn, err = (*listener).Accept()
 		if err != nil {
 			fmt.Printf("Failed to accept connection '%s'", err)
 			return
