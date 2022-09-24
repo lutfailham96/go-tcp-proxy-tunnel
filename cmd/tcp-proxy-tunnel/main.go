@@ -34,14 +34,6 @@ func main() {
 	}
 	parseConfig(config, *configFile)
 
-	if *serverHost != "" {
-		_, err := net.ResolveTCPAddr("tcp", *serverHost)
-		if err != nil {
-			fmt.Printf("Failed to resolve remote address: %s", err)
-			return
-		}
-	}
-
 	listener, err := net.Listen("tcp", config.LocalAddressTCP.String())
 	if err != nil {
 		fmt.Printf("Failed to open local port to listen: %s", err)
@@ -56,6 +48,10 @@ func main() {
 }
 
 func resolveAddr(addr string) *net.TCPAddr {
+	if addr == "" {
+		fmt.Println("Host address is not valid or empty")
+		os.Exit(1)
+	}
 	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		fmt.Printf("Failed to resolve local address: %s", err)
@@ -130,7 +126,9 @@ func parseConfig(config *proxy.Config, configFile string) {
 	if config.ServerHost != "" {
 		serverHostAddr = config.ServerHost
 	}
-	resolveAddr(serverHostAddr)
+	if serverHostAddr != "" {
+		resolveAddr(serverHostAddr)
+	}
 
 	if config.BufferSize == 0 {
 		config.BufferSize = 0xffff
