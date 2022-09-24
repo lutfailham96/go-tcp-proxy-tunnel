@@ -47,10 +47,10 @@ type Proxy struct {
 	wsUpgradeInitialized bool
 }
 
-func (p *Proxy) New(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Proxy {
+func (p *Proxy) New(connId *uint64, conn *net.Conn, lAddr, rAddr *net.TCPAddr) *Proxy {
 	return &Proxy{
-		conn:                 conn,
-		lConn:                conn,
+		conn:                 *conn,
+		lConn:                *conn,
 		lAddr:                lAddr,
 		rAddr:                rAddr,
 		lPayload:             make([]byte, 0),
@@ -60,35 +60,35 @@ func (p *Proxy) New(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Pr
 		rInitialized:         false,
 		erred:                false,
 		errSig:               make(chan bool),
-		connId:               connId,
+		connId:               *connId,
 		reverseProxy:         false,
 		wsUpgradeInitialized: false,
 	}
 }
 
-func (p *Proxy) SetlPayload(lPayload string) {
+func (p *Proxy) SetlPayload(lPayload *string) {
 	if p.sHost.hostName != "" {
-		lPayload = strings.Replace(lPayload, "[host]", fmt.Sprintf("%s", p.sHost.hostName), -1)
-		lPayload = strings.Replace(lPayload, "[host_port]", fmt.Sprintf("%s:%d", p.sHost.hostName, p.sHost.port), -1)
+		*lPayload = strings.Replace(*lPayload, "[host]", fmt.Sprintf("%s", p.sHost.hostName), -1)
+		*lPayload = strings.Replace(*lPayload, "[host_port]", fmt.Sprintf("%s:%d", p.sHost.hostName, p.sHost.port), -1)
 	}
-	lPayload = strings.Replace(lPayload, "[crlf]", "\r\n", -1)
-	p.lPayload = []byte(lPayload)
+	*lPayload = strings.Replace(*lPayload, "[crlf]", "\r\n", -1)
+	p.lPayload = []byte(*lPayload)
 }
 
-func (p *Proxy) SetrPayload(rPayload string) {
-	if rPayload == "" {
-		rPayload = "HTTP/1.1 200 Connection Established[crlf][crlf]"
+func (p *Proxy) SetrPayload(rPayload *string) {
+	if *rPayload == "" {
+		*rPayload = "HTTP/1.1 200 Connection Established[crlf][crlf]"
 	}
-	rPayload = strings.Replace(rPayload, "[crlf]", "\r\n", -1)
-	p.rPayload = []byte(rPayload)
+	*rPayload = strings.Replace(*rPayload, "[crlf]", "\r\n", -1)
+	p.rPayload = []byte(*rPayload)
 }
 
-func (p *Proxy) SetReverseProxy(enabled bool) {
-	p.reverseProxy = enabled
+func (p *Proxy) SetReverseProxy(enabled *bool) {
+	p.reverseProxy = *enabled
 }
 
-func (p *Proxy) SetServerHost(server string) {
-	sServer := strings.Split(server, ":")
+func (p *Proxy) SetServerHost(server *string) {
+	sServer := strings.Split(*server, ":")
 	serverPort, err := strconv.ParseUint(sServer[1], 10, 64)
 	if err != nil {
 		fmt.Printf("Cannot parse server port '%s'", err)
@@ -100,8 +100,8 @@ func (p *Proxy) SetServerHost(server string) {
 	}
 }
 
-func (p *Proxy) SetBufferSize(buffSize uint64) {
-	p.buffSize = buffSize
+func (p *Proxy) SetBufferSize(buffSize *uint64) {
+	p.buffSize = *buffSize
 }
 
 func (p *Proxy) Start() {
@@ -146,9 +146,9 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 		}
 		connBuff := buffer[:n]
 		if isLocal {
-			connBuff = p.handleInboundData(src, dst, connBuff)
+			p.handleInboundData(src, dst, &connBuff)
 		} else {
-			connBuff = p.handleOutboundData(src, dst, connBuff)
+			p.handleOutboundData(src, dst, &connBuff)
 		}
 		if p.reverseProxy && p.wsUpgradeInitialized {
 			n, err = src.Write(connBuff)
@@ -171,44 +171,40 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 	}
 }
 
-func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff []byte) []byte {
+func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 	if p.lInitialized {
-		return connBuff
+		return
 	}
 
 	fmt.Printf("CONN #%d %s >> %s >> %s\n", p.connId, src.RemoteAddr(), p.conn.LocalAddr(), dst.RemoteAddr())
 	if p.reverseProxy {
-		if strings.Contains(strings.ToLower(string(connBuff)), "upgrade: websocket") {
+		if strings.Contains(strings.ToLower(string(*connBuff)), "upgrade: websocket") {
 			fmt.Printf("CONN #%d connection upgrade to Websocket\n", p.connId)
-			connBuff = []byte("HTTP/1.1 101 Switching Protocols\r\n\r\n")
+			*connBuff = []byte("HTTP/1.1 101 Switching Protocols\r\n\r\n")
 			p.wsUpgradeInitialized = true
 		}
 	} else {
-		if bytes.Contains(connBuff, []byte("CONNECT ")) {
-			connBuff = p.lPayload
-			fmt.Println(string(connBuff))
+		if bytes.Contains(*connBuff, []byte("CONNECT ")) {
+			*connBuff = p.lPayload
+			fmt.Println(string(*connBuff))
 		}
 	}
 
 	p.lInitialized = true
-
-	return connBuff
 }
 
-func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff []byte) []byte {
+func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 	if p.rInitialized {
-		return connBuff
+		return
 	}
 
 	fmt.Printf("CONN #%d %s << %s << %s\n", p.connId, dst.RemoteAddr(), p.conn.LocalAddr(), src.RemoteAddr())
-	if bytes.Contains(connBuff, []byte("HTTP/1.")) && !p.reverseProxy {
-		connBuff = p.rPayload
-		fmt.Println(string(connBuff))
+	if bytes.Contains(*connBuff, []byte("HTTP/1.")) && !p.reverseProxy {
+		*connBuff = p.rPayload
+		fmt.Println(string(*connBuff))
 	}
 
 	p.rInitialized = true
-
-	return connBuff
 }
 
 func (p *Proxy) closeConnection(conn net.Conn) {

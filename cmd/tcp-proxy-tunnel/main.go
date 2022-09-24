@@ -32,7 +32,7 @@ func main() {
 		LocalPayload:     *localPayload,
 		RemotePayload:    *remotePayload,
 	}
-	parseConfig(config, *configFile)
+	parseConfig(config, &*configFile)
 
 	listener, err := net.Listen("tcp", config.LocalAddressTCP.String())
 	if err != nil {
@@ -47,12 +47,12 @@ func main() {
 	loopListener(listener, config)
 }
 
-func resolveAddr(addr string) *net.TCPAddr {
-	if addr == "" {
+func resolveAddr(addr *string) *net.TCPAddr {
+	if *addr == "" {
 		fmt.Println("Host address is not valid or empty")
 		os.Exit(1)
 	}
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", *addr)
 	if err != nil {
 		fmt.Printf("Failed to resolve local address: %s", err)
 		os.Exit(1)
@@ -62,8 +62,10 @@ func resolveAddr(addr string) *net.TCPAddr {
 
 func loopListener(listener net.Listener, config *proxy.Config) {
 	var connId = uint64(0)
+	var conn net.Conn
+	var err error
 	for {
-		conn, err := listener.Accept()
+		conn, err = listener.Accept()
 		if err != nil {
 			fmt.Printf("Failed to accept connection '%s'", err)
 			return
@@ -71,30 +73,30 @@ func loopListener(listener net.Listener, config *proxy.Config) {
 		connId += 1
 
 		var p *proxy.Proxy
-		p = p.New(connId, conn, config.LocalAddressTCP, config.RemoteAddressTCP)
+		p = p.New(&connId, &conn, config.LocalAddressTCP, config.RemoteAddressTCP)
 		if config.ServerHost != "" {
-			p.SetServerHost(config.ServerHost)
+			p.SetServerHost(&config.ServerHost)
 		}
 		if config.BufferSize > 0 {
-			p.SetBufferSize(config.BufferSize)
+			p.SetBufferSize(&config.BufferSize)
 		}
-		p.SetlPayload(config.LocalPayload)
-		p.SetrPayload(config.RemotePayload)
-		p.SetReverseProxy(config.ReverseProxyMode)
+		p.SetlPayload(&config.LocalPayload)
+		p.SetrPayload(&config.RemotePayload)
+		p.SetReverseProxy(&config.ReverseProxyMode)
 		go p.Start()
 	}
 }
 
-func parseConfig(config *proxy.Config, configFile string) {
-	if configFile != "" {
-		file, err := os.Open(configFile)
+func parseConfig(config *proxy.Config, configFile *string) {
+	if *configFile != "" {
+		file, err := os.Open(*configFile)
 		if err != nil {
 			fmt.Printf("Cannot open file '%s'", err)
 			os.Exit(1)
 			return
 		}
 		defer func(file *os.File) {
-			err := file.Close()
+			err = file.Close()
 			if err != nil {
 				fmt.Printf("Cannot close file '%s", err)
 				return
@@ -110,23 +112,23 @@ func parseConfig(config *proxy.Config, configFile string) {
 		}
 	}
 
-	localAddress := *localAddr
+	localAddress := &*localAddr
 	if config.LocalAddress != "" {
-		localAddress = config.LocalAddress
+		localAddress = &config.LocalAddress
 	}
 	config.LocalAddressTCP = resolveAddr(localAddress)
 
-	remoteAddress := *remoteAddr
+	remoteAddress := &*remoteAddr
 	if config.RemoteAddress != "" {
-		remoteAddress = config.RemoteAddress
+		remoteAddress = &config.RemoteAddress
 	}
 	config.RemoteAddressTCP = resolveAddr(remoteAddress)
 
-	serverHostAddr := *serverHost
+	serverHostAddr := &*serverHost
 	if config.ServerHost != "" {
-		serverHostAddr = config.ServerHost
+		serverHostAddr = &config.ServerHost
 	}
-	if serverHostAddr != "" {
+	if *serverHostAddr != "" {
 		resolveAddr(serverHostAddr)
 	}
 
