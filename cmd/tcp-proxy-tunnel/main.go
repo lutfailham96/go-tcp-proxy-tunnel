@@ -10,27 +10,27 @@ import (
 )
 
 var (
-	localAddr        = flag.String("l", "127.0.0.1:8082", "local address")
-	remoteAddr       = flag.String("r", "127.0.0.1:443", "remote address")
-	serverHost       = flag.String("s", "", "server host address")
-	reverseProxyMode = flag.Bool("rp", false, "enable reverse proxy mode")
-	localPayload     = flag.String("op", "", "local TCP payload replacer")
-	remotePayload    = flag.String("ip", "", "remote TCP payload replacer")
-	bufferSize       = flag.Uint64("bs", 0, "connection buffer size")
-	configFile       = flag.String("c", "", "load config from JSON file")
+	localAddr       = flag.String("l", "127.0.0.1:8082", "local address")
+	remoteAddr      = flag.String("r", "127.0.0.1:443", "remote address")
+	serverHost      = flag.String("s", "", "server host address")
+	serverProxyMode = flag.Bool("sv", false, "run on server mode")
+	localPayload    = flag.String("op", "", "local TCP payload replacer")
+	remotePayload   = flag.String("ip", "", "remote TCP payload replacer")
+	bufferSize      = flag.Uint64("bs", 0, "connection buffer size")
+	configFile      = flag.String("c", "", "load config from JSON file")
 )
 
 func main() {
 	flag.Parse()
 
 	config := &proxy.Config{
-		ReverseProxyMode: *reverseProxyMode,
-		BufferSize:       *bufferSize,
-		LocalAddress:     *localAddr,
-		RemoteAddress:    *remoteAddr,
-		ServerHost:       *serverHost,
-		LocalPayload:     *localPayload,
-		RemotePayload:    *remotePayload,
+		ServerProxyMode: *serverProxyMode,
+		BufferSize:      *bufferSize,
+		LocalAddress:    *localAddr,
+		RemoteAddress:   *remoteAddr,
+		ServerHost:      *serverHost,
+		LocalPayload:    *localPayload,
+		RemotePayload:   *remotePayload,
 	}
 	parseConfig(config, &*configFile)
 
@@ -80,7 +80,7 @@ func loopListener(listener *net.Listener, config *proxy.Config) {
 		}
 		p.SetlPayload(&config.LocalPayload)
 		p.SetrPayload(&config.RemotePayload)
-		p.SetReverseProxy(&config.ReverseProxyMode)
+		p.SetReverseProxy(&config.ServerProxyMode)
 		go p.Start()
 	}
 }
@@ -135,7 +135,7 @@ func parseConfig(config *proxy.Config, configFile *string) {
 	}
 
 	config.ProxyInfo = "client proxy"
-	if config.ReverseProxyMode {
-		config.ProxyInfo = "reverse proxy"
+	if config.ServerProxyMode {
+		config.ProxyInfo = "server proxy"
 	}
 }

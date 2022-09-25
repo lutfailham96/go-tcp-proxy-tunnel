@@ -15,7 +15,7 @@ type Host struct {
 
 type Config struct {
 	BufferSize       uint64
-	ReverseProxyMode bool
+	ServerProxyMode  bool
 	ProxyInfo        string
 	LocalAddress     string
 	RemoteAddress    string
