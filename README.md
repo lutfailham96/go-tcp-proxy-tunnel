@@ -51,9 +51,9 @@ Accept incoming connection to use as `SSH` tunnel
 $ go-tcp-proxy-tunnel \
     -l 127.0.0.1:8082 \
     -r 127.0.0.1:22 \
-    -rp
+    -sv
 
-Mode		: reverse proxy
+Mode		: server proxy
 Buffer size	: 65535
 
 go-tcp-proxy-tunnel proxing from 127.0.0.1:8082 to 127.0.0.1:22
@@ -94,6 +94,9 @@ $ go-tcp-proxy-tunnel \
     -op "GET ws://cloudflare.com HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
 
 
+Mode		: client proxy
+Buffer size	: 65535
+
 Proxying from 127.0.0.1:9999 to 104.15.50.1:443
 ```
 
@@ -119,8 +122,8 @@ $ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localh
 ```json
 {
   "BufferSize": 65535,
-  "ReverseProxyMode": true,
-  "ProxyInfo": "reverse proxy",
+  "ServerProxyMode": true,
+  "ProxyInfo": "server proxy",
   "LocalAddress": "127.0.0.1:8082",
   "RemoteAddress": "127.0.0.1:22"
 }
@@ -130,7 +133,7 @@ $ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localh
 ```json
 {
   "BufferSize": 65535,
-  "ReverseProxyMode": false,
+  "ServerProxyMode": false,
   "ProxyInfo": "client proxy",
   "LocalAddress": "127.0.0.1:9999",
   "RemoteAddress": "127.0.0.1:10443",
