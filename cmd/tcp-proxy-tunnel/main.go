@@ -62,10 +62,8 @@ func resolveAddr(addr *string) *net.TCPAddr {
 
 func loopListener(listener *net.Listener, config *proxy.Config) {
 	var connId = uint64(0)
-	var conn net.Conn
-	var err error
 	for {
-		conn, err = (*listener).Accept()
+		conn, err := (*listener).Accept()
 		if err != nil {
 			fmt.Printf("Failed to accept connection '%s'", err)
 			return
@@ -73,7 +71,7 @@ func loopListener(listener *net.Listener, config *proxy.Config) {
 		connId += 1
 
 		var p *proxy.Proxy
-		p = p.New(&connId, &conn, config.LocalAddressTCP, config.RemoteAddressTCP)
+		p = p.New(connId, &conn, config.LocalAddressTCP, config.RemoteAddressTCP)
 		if config.ServerHost != "" {
 			p.SetServerHost(&config.ServerHost)
 		}

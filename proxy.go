@@ -47,7 +47,7 @@ type Proxy struct {
 	wsUpgradeInitialized bool
 }
 
-func (p *Proxy) New(connId *uint64, conn *net.Conn, lAddr, rAddr *net.TCPAddr) *Proxy {
+func (p *Proxy) New(connId uint64, conn *net.Conn, lAddr, rAddr *net.TCPAddr) *Proxy {
 	return &Proxy{
 		conn:                 *conn,
 		lConn:                *conn,
@@ -60,7 +60,7 @@ func (p *Proxy) New(connId *uint64, conn *net.Conn, lAddr, rAddr *net.TCPAddr) *
 		rInitialized:         false,
 		erred:                false,
 		errSig:               make(chan bool),
-		connId:               *connId,
+		connId:               connId,
 		reverseProxy:         false,
 		wsUpgradeInitialized: false,
 	}
