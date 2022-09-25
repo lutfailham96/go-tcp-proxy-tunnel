@@ -80,7 +80,7 @@ func loopListener(listener *net.Listener, config *proxy.Config) {
 		}
 		p.SetlPayload(&config.LocalPayload)
 		p.SetrPayload(&config.RemotePayload)
-		p.SetReverseProxy(&config.ServerProxyMode)
+		p.SetServerProxyMode(&config.ServerProxyMode)
 		go p.Start()
 	}
 }
