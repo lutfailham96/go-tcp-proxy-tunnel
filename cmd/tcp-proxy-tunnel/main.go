@@ -17,6 +17,8 @@ var (
 	localPayload    = flag.String("op", "", "local TCP payload replacer")
 	remotePayload   = flag.String("ip", "", "remote TCP payload replacer")
 	bufferSize      = flag.Uint64("bs", 0, "connection buffer size")
+	tlsEnabled      = flag.Bool("tls", false, "enable tls/secure connection")
+	sniHost         = flag.String("sni", "", "SNI hostname")
 	configFile      = flag.String("c", "", "load config from JSON file")
 )
 
@@ -31,6 +33,8 @@ func main() {
 		ServerHost:      *serverHost,
 		LocalPayload:    *localPayload,
 		RemotePayload:   *remotePayload,
+		TLSEnabled:      *tlsEnabled,
+		SNIHost:         *sniHost,
 	}
 	parseConfig(config, &*configFile)
 
@@ -41,8 +45,12 @@ func main() {
 	}
 
 	fmt.Printf("Mode\t\t: %s\n", config.ProxyInfo)
-	fmt.Printf("Buffer size\t: %d\n\n", config.BufferSize)
-	fmt.Printf("go-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP)
+	fmt.Printf("Buffer size\t: %d\n", config.BufferSize)
+	fmt.Printf("Connection\t: %s\n", config.ConnectionInfo)
+	if config.TLSEnabled {
+		fmt.Printf("SNI Host\t: %s\n", config.SNIHost)
+	}
+	fmt.Printf("\ngo-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP)
 
 	loopListener(&listener, config)
 }
@@ -77,6 +85,10 @@ func loopListener(listener *net.Listener, config *proxy.Config) {
 		}
 		if config.BufferSize > 0 {
 			p.SetBufferSize(&config.BufferSize)
+		}
+		if config.TLSEnabled {
+			p.SetEnableTLS(&config.TLSEnabled)
+			p.SetSNIHost(&config.SNIHost)
 		}
 		p.SetlPayload(&config.LocalPayload)
 		p.SetrPayload(&config.RemotePayload)
@@ -128,6 +140,16 @@ func parseConfig(config *proxy.Config, configFile *string) {
 	}
 	if *serverHostAddr != "" {
 		resolveAddr(serverHostAddr)
+	}
+
+	config.ConnectionInfo = "insecure"
+	if config.TLSEnabled {
+		if config.SNIHost == "" {
+			fmt.Println("SNI hostname required on secure connection")
+			os.Exit(1)
+			return
+		}
+		config.ConnectionInfo = "secure (TLS)"
 	}
 
 	if config.BufferSize == 0 {

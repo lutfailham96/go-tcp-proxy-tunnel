@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"bytes"
+	"crypto/tls"
 	"fmt"
 	"net"
 	"strconv"
@@ -22,6 +23,9 @@ type Config struct {
 	LocalAddressTCP  *net.TCPAddr
 	RemoteAddressTCP *net.TCPAddr
 	ServerHost       string
+	ConnectionInfo   string
+	TLSEnabled       bool
+	SNIHost          string
 	LocalPayload     string
 	RemotePayload    string
 }
@@ -33,6 +37,8 @@ type Proxy struct {
 	lAddr                *net.TCPAddr
 	rAddr                *net.TCPAddr
 	sHost                Host
+	tlsEnabled           bool
+	sniHost              string
 	lPayload             []byte
 	rPayload             []byte
 	buffSize             uint64
@@ -68,8 +74,11 @@ func (p *Proxy) New(connId uint64, conn *net.Conn, lAddr, rAddr *net.TCPAddr) *P
 
 func (p *Proxy) SetlPayload(lPayload *string) {
 	if p.sHost.hostName != "" {
-		*lPayload = strings.Replace(*lPayload, "[host]", fmt.Sprintf("%s", p.sHost.hostName), -1)
+		*lPayload = strings.Replace(*lPayload, "[host]", p.sHost.hostName, -1)
 		*lPayload = strings.Replace(*lPayload, "[host_port]", fmt.Sprintf("%s:%d", p.sHost.hostName, p.sHost.port), -1)
+	}
+	if p.sniHost != "" {
+		*lPayload = strings.Replace(*lPayload, "[sni]", p.sniHost, -1)
 	}
 	*lPayload = strings.Replace(*lPayload, "[crlf]", "\r\n", -1)
 	p.lPayload = []byte(*lPayload)
@@ -104,11 +113,26 @@ func (p *Proxy) SetBufferSize(buffSize *uint64) {
 	p.buffSize = *buffSize
 }
 
+func (p *Proxy) SetEnableTLS(enabled *bool) {
+	p.tlsEnabled = *enabled
+}
+
+func (p *Proxy) SetSNIHost(hostname *string) {
+	p.sniHost = *hostname
+}
+
 func (p *Proxy) Start() {
 	defer p.closeConnection(&p.lConn)
 
 	var err error
-	p.rConn, err = net.DialTCP("tcp", nil, p.rAddr)
+	if p.tlsEnabled {
+		p.rConn, err = tls.Dial("tcp", p.rAddr.String(), &tls.Config{
+			ServerName:         p.sniHost,
+			InsecureSkipVerify: true,
+		})
+	} else {
+		p.rConn, err = net.DialTCP("tcp", nil, p.rAddr)
+	}
 	if err != nil {
 		fmt.Printf("Cannot dial remote connection '%s'", err)
 		return

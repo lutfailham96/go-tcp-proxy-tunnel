@@ -96,8 +96,9 @@ $ go-tcp-proxy-tunnel \
 
 Mode		: client proxy
 Buffer size	: 65535
+Connection	: insecure
 
-Proxying from 127.0.0.1:9999 to 104.15.50.1:443
+Proxying from 127.0.0.1:9999 to 127.0.0.1:10443
 ```
 
 `stunnel` configuration
@@ -109,6 +110,29 @@ connect = 104.15.50.5:443
 sni = cloudflare.com
 cert = /etc/stunnel/ssl/stunnel.pem
 
+```
+
+Tunnel over `SSH` connection
+```shell
+$ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localhost
+```
+
+### Client Example (TLS without `stunnel`)
+
+Use custom payload
+```shell
+$ go-tcp-proxy-tunnel \
+    -l 127.0.0.1:9999 \
+    -r 104.15.50.5:443 \
+    -op "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
+
+
+Mode		: client proxy
+Buffer size	: 65535
+Connection	: secure (TLS)
+SNI Host	: cloudflare.com
+
+Proxying from 127.0.0.1:9999 to 104.15.50.1:443
 ```
 
 Tunnel over `SSH` connection
@@ -139,6 +163,22 @@ $ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localh
   "RemoteAddress": "127.0.0.1:10443",
   "LocalPayload": "GET ws://cloudflare.com HTTP/1.1[crlf]Host: [host][crlf]Connection: keep-alive[crlf]Upgrade: websocket[crlf][crlf]",
   "RemotePayload": "HTTP/1.1 200 Connection Established[crlf][crlf]",
+  "ServerHost": "my-server:443"
+}
+```
+
+**client (TLS)**
+```json
+{
+  "BufferSize": 65535,
+  "ServerProxyMode": false,
+  "ProxyInfo": "client proxy",
+  "LocalAddress": "127.0.0.1:9999",
+  "RemoteAddress": "104.15.50.1:443",
+  "LocalPayload": "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Connection: keep-alive[crlf]Upgrade: websocket[crlf][crlf]",
+  "RemotePayload": "HTTP/1.1 200 Connection Established[crlf][crlf]",
+  "TLSEnabled": true,
+  "SNIHost": "cloudflare.com",
   "ServerHost": "my-server:443"
 }
 ```
