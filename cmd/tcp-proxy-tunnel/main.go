@@ -10,31 +10,33 @@ import (
 )
 
 var (
-	localAddr       = flag.String("l", "127.0.0.1:8082", "local address")
-	remoteAddr      = flag.String("r", "127.0.0.1:443", "remote address")
-	serverHost      = flag.String("s", "", "server host address")
-	serverProxyMode = flag.Bool("sv", false, "run on server mode")
-	localPayload    = flag.String("op", "", "local TCP payload replacer")
-	remotePayload   = flag.String("ip", "", "remote TCP payload replacer")
-	bufferSize      = flag.Uint64("bs", 0, "connection buffer size")
-	tlsEnabled      = flag.Bool("tls", false, "enable tls/secure connection")
-	sniHost         = flag.String("sni", "", "SNI hostname")
-	configFile      = flag.String("c", "", "load config from JSON file")
+	localAddr           = flag.String("l", "127.0.0.1:8082", "local address")
+	remoteAddr          = flag.String("r", "127.0.0.1:443", "remote address")
+	serverHost          = flag.String("s", "", "server host address")
+	disableServerResolv = flag.Bool("dsr", false, "disable server host resolve")
+	serverProxyMode     = flag.Bool("sv", false, "run on server mode")
+	localPayload        = flag.String("op", "", "local TCP payload replacer")
+	remotePayload       = flag.String("ip", "", "remote TCP payload replacer")
+	bufferSize          = flag.Uint64("bs", 0, "connection buffer size")
+	tlsEnabled          = flag.Bool("tls", false, "enable tls/secure connection")
+	sniHost             = flag.String("sni", "", "SNI hostname")
+	configFile          = flag.String("c", "", "load config from JSON file")
 )
 
 func main() {
 	flag.Parse()
 
 	config := &proxy.Config{
-		ServerProxyMode: *serverProxyMode,
-		BufferSize:      *bufferSize,
-		LocalAddress:    *localAddr,
-		RemoteAddress:   *remoteAddr,
-		ServerHost:      *serverHost,
-		LocalPayload:    *localPayload,
-		RemotePayload:   *remotePayload,
-		TLSEnabled:      *tlsEnabled,
-		SNIHost:         *sniHost,
+		ServerProxyMode:     *serverProxyMode,
+		BufferSize:          *bufferSize,
+		LocalAddress:        *localAddr,
+		RemoteAddress:       *remoteAddr,
+		ServerHost:          *serverHost,
+		DisableServerResolv: *disableServerResolv,
+		LocalPayload:        *localPayload,
+		RemotePayload:       *remotePayload,
+		TLSEnabled:          *tlsEnabled,
+		SNIHost:             *sniHost,
 	}
 	parseConfig(config, *configFile)
 
@@ -138,7 +140,7 @@ func parseConfig(config *proxy.Config, configFile string) {
 	if config.ServerHost != "" {
 		serverHostAddr = config.ServerHost
 	}
-	if serverHostAddr != "" {
+	if serverHostAddr != "" && !*disableServerResolv {
 		resolveAddr(serverHostAddr)
 	}
 
