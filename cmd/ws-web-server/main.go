@@ -27,6 +27,11 @@ var (
 	domain         = flag.String("d", "*", "allowed server host address / domain, separated by comma: 'myserver.tls,anotherserver.tld'")
 )
 
+const (
+	cerTypeCA   = 0
+	cerTypeCert = 1
+)
+
 type serverConfig struct {
 	secure  bool
 	address string
@@ -183,23 +188,7 @@ func closeConnection(conn net.Conn) {
 }
 
 func tlsCertSetup() (serverTLSConf *tls.Config, clientTLSConf *tls.Config, err error) {
-	ca := &x509.Certificate{
-		SerialNumber: big.NewInt(2019),
-		Subject: pkix.Name{
-			Organization:  []string{"WS"},
-			Country:       []string{"WS"},
-			Province:      []string{"WS"},
-			Locality:      []string{"WS"},
-			StreetAddress: []string{"WS"},
-			PostalCode:    []string{"00000"},
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(10, 0, 0),
-		IsCA:                  true,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		BasicConstraintsValid: true,
-	}
+	ca := generateX509Cer(cerTypeCA)
 
 	caPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -223,23 +212,7 @@ func tlsCertSetup() (serverTLSConf *tls.Config, clientTLSConf *tls.Config, err e
 		Bytes: x509.MarshalPKCS1PrivateKey(caPrivateKey),
 	})
 
-	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(2019),
-		Subject: pkix.Name{
-			Organization:  []string{"WS"},
-			Country:       []string{"WS"},
-			Province:      []string{"WS"},
-			Locality:      []string{"WS"},
-			StreetAddress: []string{"WS"},
-			PostalCode:    []string{"00000"},
-		},
-		IPAddresses:  []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:     x509.KeyUsageDigitalSignature,
-	}
+	cert := generateX509Cer(cerTypeCert)
 
 	certPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -279,4 +252,35 @@ func tlsCertSetup() (serverTLSConf *tls.Config, clientTLSConf *tls.Config, err e
 	}
 
 	return
+}
+
+func generateX509Cer(cerType uint) *x509.Certificate {
+	cer := &x509.Certificate{
+		SerialNumber: big.NewInt(2022),
+		Subject: pkix.Name{
+			Organization:  []string{"WS"},
+			Country:       []string{"WS"},
+			Province:      []string{"WS"},
+			Locality:      []string{"WS"},
+			StreetAddress: []string{"WS"},
+			PostalCode:    []string{"00000"},
+		},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().AddDate(10, 0, 0),
+		SubjectKeyId: []byte{1, 2, 3, 4, 6},
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+	}
+
+	if cerType == cerTypeCA {
+		cer.IsCA = true
+		cer.KeyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign
+		cer.BasicConstraintsValid = true
+	}
+
+	if cerType == cerTypeCert {
+		cer.KeyUsage = x509.KeyUsageDigitalSignature
+		cer.IPAddresses = []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback}
+	}
+
+	return cer
 }
