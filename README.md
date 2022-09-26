@@ -128,6 +128,9 @@ Use custom payload
 $ go-tcp-proxy-tunnel \
     -l 127.0.0.1:9999 \
     -r 104.15.50.5:443 \
+    -s myserver:443 \
+    -tls \
+    -sni cloudflare.com \
     -op "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
 
 
