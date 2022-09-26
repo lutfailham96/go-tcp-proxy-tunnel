@@ -133,7 +133,7 @@ cert = /etc/stunnel/ssl/stunnel.pem
 
 Tunnel over `SSH` connection
 ```shell
-$ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localhost
+$ ssh -o "ProxyCommand=ncat --proxy 127.0.0.1:9999 %h %p" -v4ND 1080 my-user@localhost
 ```
 
 ### Client Example (TLS without `stunnel`)
@@ -160,7 +160,7 @@ Proxying from 127.0.0.1:9999 to 104.15.50.1:443
 
 Tunnel over `SSH` connection
 ```shell
-$ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localhost
+$ ssh -o "ProxyCommand=ncat --proxy 127.0.0.1:9999 %h %p" -v4ND 1080 my-user@localhost
 ```
 
 ### Config File Example
