@@ -1,4 +1,8 @@
 # go-tcp-proxy-tunnel
+
+[![GitHub license](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/Naereen/StrapDown.js/blob/master/LICENSE)
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/lutfailham96/go-tcp-proxy-tunnel)](https://goreportcard.com/report/github.com/lutfailham96/go-tcp-proxy-tunnel)
 [![Maintainability](https://api.codeclimate.com/v1/badges/022a8af7f8393716958d/maintainability)](https://codeclimate.com/github/lutfailham96/go-tcp-proxy-tunnel/maintainability)
 
 Fast & clean tcp proxy tunnel written in Go
