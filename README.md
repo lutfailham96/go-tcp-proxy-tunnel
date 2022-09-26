@@ -38,10 +38,14 @@ Usage of go-tcp-proxy-tunnel:
     	local TCP payload replacer
   -r string
     	remote address (default "127.0.0.1:443")
-  -sv
-    	run on server mode
   -s string
     	server host address
+  -sni string
+    	SNI hostname
+  -sv
+    	run on server mode
+  -tls
+    	enable tls/secure connection
 ```
 
 ### Server example
