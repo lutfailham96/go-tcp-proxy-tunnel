@@ -25,7 +25,7 @@ var (
 	httpAddress    = flag.String("l", "0.0.0.0:80", "http listen address")
 	httpsAddress   = flag.String("ln", "0.0.0.0:443", "https listen address")
 	backendAddress = flag.String("b", "127.0.0.1:8082", "backend proxy address")
-	domain         = flag.String("d", "*", "server host address")
+	domain         = flag.String("d", "*", "allowed server host address / domain, separated by comma: 'myserver.tls,anotherserver.tld'")
 )
 
 type serverConfig struct {
