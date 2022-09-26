@@ -95,6 +95,7 @@ $ go-tcp-proxy-tunnel \
     -l 127.0.0.1:9999 \
     -r 127.0.0.1:10443 \
     -s myserver:443 \
+    -dsr \
     -op "GET ws://cloudflare.com HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
 
 
@@ -129,6 +130,7 @@ $ go-tcp-proxy-tunnel \
     -l 127.0.0.1:9999 \
     -r 104.15.50.5:443 \
     -s myserver:443 \
+    -dsr \
     -tls \
     -sni cloudflare.com \
     -op "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
