@@ -36,7 +36,7 @@ func main() {
 		TLSEnabled:      *tlsEnabled,
 		SNIHost:         *sniHost,
 	}
-	parseConfig(config, &*configFile)
+	parseConfig(config, *configFile)
 
 	listener, err := net.Listen("tcp", config.LocalAddressTCP.String())
 	if err != nil {
@@ -52,15 +52,15 @@ func main() {
 	}
 	fmt.Printf("\ngo-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP)
 
-	loopListener(&listener, config)
+	loopListener(listener, config)
 }
 
-func resolveAddr(addr *string) *net.TCPAddr {
-	if *addr == "" {
+func resolveAddr(addr string) *net.TCPAddr {
+	if addr == "" {
 		fmt.Println("Host address is not valid or empty")
 		os.Exit(1)
 	}
-	tcpAddr, err := net.ResolveTCPAddr("tcp", *addr)
+	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
 	if err != nil {
 		fmt.Printf("Failed to resolve local address: %s", err)
 		os.Exit(1)
@@ -68,10 +68,10 @@ func resolveAddr(addr *string) *net.TCPAddr {
 	return tcpAddr
 }
 
-func loopListener(listener *net.Listener, config *proxy.Config) {
+func loopListener(listener net.Listener, config *proxy.Config) {
 	var connId = uint64(0)
 	for {
-		conn, err := (*listener).Accept()
+		conn, err := listener.Accept()
 		if err != nil {
 			fmt.Printf("Failed to accept connection '%s'", err)
 			return
@@ -79,27 +79,27 @@ func loopListener(listener *net.Listener, config *proxy.Config) {
 		connId += 1
 
 		var p *proxy.Proxy
-		p = p.New(connId, &conn, config.LocalAddressTCP, config.RemoteAddressTCP)
+		p = p.New(connId, conn, config.LocalAddressTCP, config.RemoteAddressTCP)
 		if config.ServerHost != "" {
-			p.SetServerHost(&config.ServerHost)
+			p.SetServerHost(config.ServerHost)
 		}
 		if config.BufferSize > 0 {
-			p.SetBufferSize(&config.BufferSize)
+			p.SetBufferSize(config.BufferSize)
 		}
 		if config.TLSEnabled {
-			p.SetEnableTLS(&config.TLSEnabled)
-			p.SetSNIHost(&config.SNIHost)
+			p.SetEnableTLS(config.TLSEnabled)
+			p.SetSNIHost(config.SNIHost)
 		}
-		p.SetlPayload(&config.LocalPayload)
-		p.SetrPayload(&config.RemotePayload)
-		p.SetServerProxyMode(&config.ServerProxyMode)
+		p.SetlPayload(config.LocalPayload)
+		p.SetrPayload(config.RemotePayload)
+		p.SetServerProxyMode(config.ServerProxyMode)
 		go p.Start()
 	}
 }
 
-func parseConfig(config *proxy.Config, configFile *string) {
-	if *configFile != "" {
-		file, err := os.Open(*configFile)
+func parseConfig(config *proxy.Config, configFile string) {
+	if configFile != "" {
+		file, err := os.Open(configFile)
 		if err != nil {
 			fmt.Printf("Cannot open file '%s'", err)
 			os.Exit(1)
@@ -122,23 +122,23 @@ func parseConfig(config *proxy.Config, configFile *string) {
 		}
 	}
 
-	localAddress := &*localAddr
+	localAddress := *localAddr
 	if config.LocalAddress != "" {
-		localAddress = &config.LocalAddress
+		localAddress = config.LocalAddress
 	}
 	config.LocalAddressTCP = resolveAddr(localAddress)
 
-	remoteAddress := &*remoteAddr
+	remoteAddress := *remoteAddr
 	if config.RemoteAddress != "" {
-		remoteAddress = &config.RemoteAddress
+		remoteAddress = config.RemoteAddress
 	}
 	config.RemoteAddressTCP = resolveAddr(remoteAddress)
 
-	serverHostAddr := &*serverHost
+	serverHostAddr := *serverHost
 	if config.ServerHost != "" {
-		serverHostAddr = &config.ServerHost
+		serverHostAddr = config.ServerHost
 	}
-	if *serverHostAddr != "" {
+	if serverHostAddr != "" {
 		resolveAddr(serverHostAddr)
 	}
 
