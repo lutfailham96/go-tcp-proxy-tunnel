@@ -98,7 +98,8 @@ $ go-tcp-proxy-tunnel \
     -r 127.0.0.1:10443 \
     -s myserver:443 \
     -dsr \
-    -op "GET ws://cloudflare.com HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
+    -sni cloudflare.com \
+    -op "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
 
 
 Mode		: client proxy
@@ -172,9 +173,10 @@ $ ssh -o "ProxyCommand=corkscrew 127.0.0.1 9999 %h %p" -v4ND 1080 my-user@localh
   "ProxyInfo": "client proxy",
   "LocalAddress": "127.0.0.1:9999",
   "RemoteAddress": "127.0.0.1:10443",
-  "LocalPayload": "GET ws://cloudflare.com HTTP/1.1[crlf]Host: [host][crlf]Connection: keep-alive[crlf]Upgrade: websocket[crlf][crlf]",
+  "LocalPayload": "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Connection: keep-alive[crlf]Upgrade: websocket[crlf][crlf]",
   "RemotePayload": "HTTP/1.1 200 Connection Established[crlf][crlf]",
   "ServerHost": "my-server:443"
+  "SNIHost": "cloudflare.com",
 }
 ```
 
