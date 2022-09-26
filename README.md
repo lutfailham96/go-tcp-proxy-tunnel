@@ -89,6 +89,13 @@ server {
 }
 ```
 
+or run using `go-ws-web-server` binary for simplicity
+```shell
+$ sudo go-ws-web-server
+
+Websocket web server running on 0.0.0.0:80, 0.0.0.0:443
+```
+
 ### Client Example
 
 Use custom payload
