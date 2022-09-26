@@ -30,6 +30,8 @@ Usage of go-tcp-proxy-tunnel:
     	connection buffer size
   -c string
     	load config from JSON file
+  -dsr
+    	disable server host resolve
   -ip string
     	remote TCP payload replacer
   -l string
