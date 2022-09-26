@@ -95,16 +95,18 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	domainInvalid := true
+	fmt.Println(r.Host)
+
+	domainValid := false
 	if *domain != "*" {
 		for _, allowedDomain := range strings.Split(*domain, ",") {
 			if r.Host == allowedDomain {
-				domainInvalid = false
+				domainValid = true
 				break
 			}
 		}
 	}
-	if domainInvalid {
+	if !domainValid && *domain != "*" {
 		http.Error(w, "Domain not allowed", http.StatusForbidden)
 		fmt.Printf("Domain not allowed (%s >> %s)\n", r.RemoteAddr, *backendAddress)
 		return
