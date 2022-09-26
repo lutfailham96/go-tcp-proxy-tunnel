@@ -12,7 +12,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"math/big"
 	"net"
 	"net/http"
@@ -95,8 +94,6 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(r.Host)
-
 	domainValid := false
 	if *domain != "*" {
 		for _, allowedDomain := range strings.Split(*domain, ",") {
@@ -115,8 +112,6 @@ func mainHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Printf("Serving websocket proxy (%s >> %s)\n", r.RemoteAddr, *backendAddress)
 	p := websocketProxy(*backendAddress)
 	p.ServeHTTP(w, r)
-
-	return
 }
 
 func isWebsocket(r *http.Request) bool {
@@ -172,7 +167,7 @@ func createHijack(w http.ResponseWriter) (net.Conn, error) {
 
 	nc, _, err := hj.Hijack()
 	if err != nil {
-		log.Printf("Hijack error: %v", err)
+		fmt.Printf("Hijack error: %v", err)
 		return nil, err
 	}
 
