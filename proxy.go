@@ -171,9 +171,9 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 		}
 		connBuff := buffer[:n]
 		if isLocal {
-			p.handleInboundData(src, dst, &connBuff)
-		} else {
 			p.handleOutboundData(src, dst, &connBuff)
+		} else {
+			p.handleInboundData(src, dst, &connBuff)
 		}
 		if p.serverProxyMode && p.wsUpgradeInitialized {
 			n, err = src.Write(connBuff)
@@ -196,7 +196,7 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 	}
 }
 
-func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
+func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 	if p.lInitialized {
 		return
 	}
@@ -218,7 +218,7 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 	p.lInitialized = true
 }
 
-func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
+func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 	if p.rInitialized {
 		return
 	}
