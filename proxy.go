@@ -66,7 +66,7 @@ func (p *Proxy) New(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Pr
 		lInitialized:         false,
 		rInitialized:         false,
 		erred:                false,
-		errSig:               make(chan bool),
+		errSig:               make(chan bool, 2),
 		connId:               connId,
 		serverProxyMode:      false,
 		wsUpgradeInitialized: false,
@@ -146,6 +146,7 @@ func (p *Proxy) Start() {
 	if !p.serverProxyMode {
 		go p.handleForwardData(p.rConn, p.lConn)
 	}
+	<-p.errSig
 	<-p.errSig
 	fmt.Printf("CONN #%d closed (%d bytes sent, %d bytes received)\n", p.connId, p.bytesSent, p.bytesReceived)
 }
