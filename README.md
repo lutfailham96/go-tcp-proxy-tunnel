@@ -8,7 +8,7 @@
 
 Fast & clean tcp proxy tunnel written in Go
 
-This project was intended for debugging text-based protocols. The next version will address binary protocols.
+This project was intended for debugging text-based protocols.
 
 ## Install
 
