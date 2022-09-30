@@ -160,7 +160,6 @@ func websocketProxy(target string) http.Handler {
 		go cp(d, hj)
 		go cp(hj, d)
 		<-errCh
-		<-errCh
 	})
 }
 

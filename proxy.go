@@ -151,7 +151,6 @@ func (p *Proxy) Start() {
 		go p.handleForwardData(p.rConn, p.lConn)
 	}
 	<-p.errSig
-	<-p.errSig
 	fmt.Printf("CONN #%d closed (%d bytes sent, %d bytes received)\n", p.connId, p.bytesSent, p.bytesReceived)
 }
 
