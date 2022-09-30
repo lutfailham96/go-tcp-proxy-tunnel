@@ -98,15 +98,19 @@ func (p *Proxy) SetServerProxyMode(enabled bool) {
 }
 
 func (p *Proxy) SetServerHost(server string) {
-	sServer := strings.Split(server, ":")
-	serverPort, err := strconv.ParseUint(sServer[1], 10, 64)
+	sHost, sPort, err := net.SplitHostPort(server)
+	if err != nil {
+		fmt.Printf("Cannot parse server host port '%s'", err)
+		return
+	}
+	sPortParsed, err := strconv.ParseUint(sPort, 10, 64)
 	if err != nil {
 		fmt.Printf("Cannot parse server port '%s'", err)
 		return
 	}
 	p.sHost = Host{
-		hostName: sServer[0],
-		port:     serverPort,
+		hostName: sHost,
+		port:     sPortParsed,
 	}
 }
 
