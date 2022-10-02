@@ -85,7 +85,12 @@ func startServer(wg *sync.WaitGroup, config *serverConfig) {
 		srv.TLSConfig = &tls.Config{Certificates: config.cer}
 	}
 
-	err := srv.ListenAndServe()
+        var err error
+        if config.secure {
+                err = srv.ListenAndServeTLS("", "")
+        } else {
+                err = srv.ListenAndServe()
+        }
 	if err != nil {
 		fmt.Println(err)
 		return
