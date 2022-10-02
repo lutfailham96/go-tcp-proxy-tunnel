@@ -16,4 +16,4 @@ install:
 
 clean:
 	@echo "Cleaning unused file"
-	rm go-tcp-proxy-tunnel
+	rm go-tcp-proxy-tunnel go-ws-web-server
