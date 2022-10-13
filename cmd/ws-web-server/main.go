@@ -82,7 +82,10 @@ func startServer(wg *sync.WaitGroup, config *serverConfig) {
 	}
 
 	if config.secure {
-		srv.TLSConfig = &tls.Config{Certificates: config.cer}
+		srv.TLSConfig = &tls.Config{
+			Certificates:       config.cer,
+			InsecureSkipVerify: true,
+		}
 	}
 
 	var err error
@@ -136,22 +139,23 @@ func isWebsocket(r *http.Request) bool {
 
 func websocketProxy(target string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		d, err := net.Dial("tcp", target)
-		if err != nil {
-			http.Error(w, "Error contacting backend server", http.StatusInternalServerError)
-			fmt.Printf("Error dialing websocket backend %s: %v", target, err)
-			return
-		}
-		defer closeConnection(d)
-
-		hj, err := createHijack(w)
+		src, err := createHijack(w)
 		if err != nil {
 			http.Error(w, "Hijack error", http.StatusInternalServerError)
 			fmt.Println(err)
 			return
 		}
+		defer closeConnection(src)
 
-		err = r.Write(d)
+		dst, err := net.Dial("tcp", target)
+		if err != nil {
+			http.Error(w, "Error contacting backend server", http.StatusInternalServerError)
+			fmt.Printf("Error dialing websocket backend %s: %v", target, err)
+			return
+		}
+		defer closeConnection(dst)
+
+		err = r.Write(dst)
 		if err != nil {
 			fmt.Printf("Error copying request to target: %v", err)
 			return
@@ -162,8 +166,8 @@ func websocketProxy(target string) http.Handler {
 			_, err := io.Copy(dst, src)
 			errCh <- err
 		}
-		go cp(d, hj)
-		go cp(hj, d)
+		go cp(dst, src)
+		go cp(src, dst)
 		<-errCh
 	})
 }
