@@ -209,7 +209,7 @@ func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 	if p.serverProxyMode {
 		if strings.Contains(strings.ToLower(string(*connBuff)), "upgrade: websocket") {
 			fmt.Printf("CONN #%d connection upgrade to Websocket\n", p.connId)
-			*connBuff = []byte("HTTP/1.1 101 Switching Protocols\r\n\r\n")
+			*connBuff = []byte("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
 			p.wsUpgradeInitialized = true
 		}
 	} else {
