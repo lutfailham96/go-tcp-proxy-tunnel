@@ -182,7 +182,7 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 		if p.serverProxyMode && p.wsUpgradeInitialized {
 			n, err = src.Write(connBuff)
 			p.wsUpgradeInitialized = false
-			go p.handleForwardData(dst, src)
+			continue
 		} else {
 			n, err = dst.Write(connBuff)
 		}
