@@ -160,14 +160,16 @@ func websocketProxy(target string) http.Handler {
 			return
 		}
 
-		errCh := make(chan error, 1)
-		cp := func(dst io.Writer, src io.Reader) {
+		errSrcCh := make(chan error, 1)
+		errDstCh := make(chan error, 1)
+		cp := func(dst io.Writer, src io.Reader, errCh chan error) {
 			_, err := io.Copy(dst, src)
 			errCh <- err
 		}
-		go cp(dst, src)
-		go cp(src, dst)
-		<-errCh
+		go cp(dst, src, errDstCh)
+		go cp(src, dst, errSrcCh)
+		<-errDstCh
+		<-errSrcCh
 	})
 }
 
