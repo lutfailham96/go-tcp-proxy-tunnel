@@ -61,9 +61,8 @@ func main() {
 
 	fmt.Printf("Websocket web server running on %s, %s\n\n", *httpAddress, *httpsAddress)
 
-	tcpWg.Add(1)
+	tcpWg.Add(2)
 	go startServer(&tcpWg, webConfig)
-	tcpWg.Add(1)
 	go startServer(&tcpWg, webTlsConfig)
 
 	tcpWg.Wait()
@@ -139,14 +138,6 @@ func isWebsocket(r *http.Request) bool {
 
 func websocketProxy(target string) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		src, err := createHijack(w)
-		if err != nil {
-			http.Error(w, "Hijack error", http.StatusInternalServerError)
-			fmt.Println(err)
-			return
-		}
-		defer closeConnection(src)
-
 		dst, err := net.Dial("tcp", target)
 		if err != nil {
 			http.Error(w, "Error contacting backend server", http.StatusInternalServerError)
@@ -155,13 +146,21 @@ func websocketProxy(target string) http.Handler {
 		}
 		defer closeConnection(dst)
 
+		src, err := createHijack(w)
+		if err != nil {
+			http.Error(w, "Hijack error", http.StatusInternalServerError)
+			fmt.Println(err)
+			return
+		}
+		defer closeConnection(src)
+
 		err = r.Write(dst)
 		if err != nil {
 			fmt.Printf("Error copying request to target: %v", err)
 			return
 		}
 
-		errCh := make(chan error, 2)
+		errCh := make(chan error, 1)
 		cp := func(dst io.Writer, src io.Reader) {
 			_, err := io.Copy(dst, src)
 			errCh <- err
