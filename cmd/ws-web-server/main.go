@@ -162,15 +162,31 @@ func websocketProxy(target string) http.Handler {
 
 		errSrcCh := make(chan error, 1)
 		errDstCh := make(chan error, 1)
-		cp := func(dst io.Writer, src io.Reader, errCh chan error) {
-			_, err := io.Copy(dst, src)
-			errCh <- err
-		}
-		go cp(dst, src, errDstCh)
-		go cp(src, dst, errSrcCh)
+		go forwardConn(src, dst, errDstCh)
+		go forwardConn(dst, src, errSrcCh)
 		<-errDstCh
 		<-errSrcCh
 	})
+}
+
+func forwardConn(src io.Reader, dst io.Writer, errCh chan error) {
+	buff := make([]byte, 0xffff)
+	for {
+		nr, err := src.Read(buff)
+		b := buff[0:nr]
+		if err != nil {
+			//fmt.Printf("Cannot read buff '%s'", err)
+			errCh <- err
+			return
+		}
+		fmt.Printf("BUFF '%s'\n\n", string(b))
+		_, err = dst.Write(b)
+		if err != nil {
+			//fmt.Printf("Cannot write buff '%s'", err)
+			errCh <- err
+			return
+		}
+	}
 }
 
 func createHijack(w http.ResponseWriter) (net.Conn, error) {
