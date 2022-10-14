@@ -148,8 +148,6 @@ func websocketProxy(target string) http.Handler {
 
 		src, err := createHijack(w)
 		if err != nil {
-			http.Error(w, "Hijack error", http.StatusInternalServerError)
-			fmt.Println(err)
 			return
 		}
 		defer closeConnection(src)
@@ -179,7 +177,6 @@ func forwardConn(src io.Reader, dst io.Writer, errCh chan error) {
 			errCh <- err
 			return
 		}
-		fmt.Printf("BUFF '%s'\n\n", string(b))
 		_, err = dst.Write(b)
 		if err != nil {
 			//fmt.Printf("Cannot write buff '%s'", err)
@@ -192,14 +189,16 @@ func forwardConn(src io.Reader, dst io.Writer, errCh chan error) {
 func createHijack(w http.ResponseWriter) (net.Conn, error) {
 	hj, ok := w.(http.Hijacker)
 	if !ok {
-		http.Error(w, "Not a hijacker", 500)
-		return nil, errors.New("not a hijacker")
+		http.Error(w, "can't switch protocols", http.StatusInternalServerError)
+		fmt.Printf("can't switch protocols using non-Hijacker ResponseWriter type %T", w)
+		return nil, errors.New(fmt.Sprintf("can't switch protocols using non-Hijacker ResponseWriter type %T", w))
 	}
 
 	nc, _, err := hj.Hijack()
 	if err != nil {
-		fmt.Printf("Hijack error: %v", err)
-		return nil, err
+		http.Error(w, "Hijack failed on protocol switch", http.StatusInternalServerError)
+		fmt.Printf("Hijack failed on protocol switch: %v", err)
+		return nil, errors.New(fmt.Sprintf("Hijack failed on protocol switch: %v", err))
 	}
 
 	return nc, nil
