@@ -37,8 +37,10 @@ func setupTcpListener(secure bool) {
 			fmt.Printf("Cannot setup tls certificates '%s'", err)
 		}
 		ln, err = tls.Listen("tcp", *httpsAddress, tlsConfig)
+		fmt.Printf("Secure TCP listen on:\t%s\n", *httpsAddress)
 	} else {
 		ln, err = net.Listen("tcp", *httpAddress)
+		fmt.Printf("TCP listen on:\t\t%s\n", *httpAddress)
 	}
 	if err != nil {
 		fmt.Printf("Cannot bind port '%s'\n", err)
