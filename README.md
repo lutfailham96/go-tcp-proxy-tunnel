@@ -1,5 +1,6 @@
 # go-tcp-proxy-tunnel
 
+[![CI](https://github.com/lutfailham96/go-tcp-proxy-tunnel/actions/workflows/ci.yml/badge.svg)](https://github.com/lutfailham96/go-tcp-proxy-tunnel/actions/workflows/ci.yml)
 [![GitHub license](https://img.shields.io/github/license/lutfailham96/go-tcp-proxy-tunnel.svg)](https://github.com/lutfailham96/go-tcp-proxy-tunnel/blob/master/LICENSE)
 [![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](https://go.dev/)
 [![Go Reference](https://pkg.go.dev/badge/github.com/lutfailham96/go-tcp-proxy-tunnel.svg)](https://pkg.go.dev/github.com/lutfailham96/go-tcp-proxy-tunnel)
