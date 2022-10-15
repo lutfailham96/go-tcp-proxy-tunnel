@@ -1,7 +1,7 @@
 .PHONY: format build clean
 
 format:
-	find . -name "*.go" -not -path ".git/*" | xargs gofmt -s -d -w
+	@find . -name "*.go" -not -path ".git/*" | xargs gofmt -s -d -w
 
 build:
 	@echo "Building go-tcp-proxy-tunnel binary"
@@ -16,4 +16,4 @@ install:
 
 clean:
 	@echo "Cleaning unused file"
-	rm go-tcp-proxy-tunnel go-ws-web-server
+	@rm -f go-tcp-proxy-tunnel go-ws-web-server
