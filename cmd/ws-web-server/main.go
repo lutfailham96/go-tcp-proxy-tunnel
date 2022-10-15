@@ -37,9 +37,11 @@ func setupTcpListener(secure bool) {
 		if err != nil {
 			fmt.Printf("Cannot setup tls certificates '%s'", err)
 		}
+		tcp.ResolveAddr(*httpsAddress)
 		ln, err = tls.Listen("tcp", *httpsAddress, tlsConfig)
 		fmt.Printf("Secure TCP listen on:\t%s\n", *httpsAddress)
 	} else {
+		tcp.ResolveAddr(*httpAddress)
 		ln, err = net.Listen("tcp", *httpAddress)
 		fmt.Printf("TCP listen on:\t\t%s\n", *httpAddress)
 	}
