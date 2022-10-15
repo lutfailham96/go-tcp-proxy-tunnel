@@ -1,4 +1,4 @@
-package proxy
+package util
 
 import (
 	"bytes"
@@ -14,12 +14,12 @@ import (
 )
 
 const (
-	CerTypeCA   = 0
-	CerTypeCert = 1
+	TLSCerTypeCA   = 0
+	TLSCerTypeCert = 1
 )
 
-func TlsCertSetup() (serverTLSConf *tls.Config, clientTLSConf *tls.Config, err error) {
-	ca := GenerateX509Cer(CerTypeCA)
+func TLSGenerateConfig() (serverTLSConf *tls.Config, clientTLSConf *tls.Config, err error) {
+	ca := TLSGenerateX509Cer(TLSCerTypeCA)
 
 	caPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -43,7 +43,7 @@ func TlsCertSetup() (serverTLSConf *tls.Config, clientTLSConf *tls.Config, err e
 		Bytes: x509.MarshalPKCS1PrivateKey(caPrivateKey),
 	})
 
-	cert := GenerateX509Cer(CerTypeCert)
+	cert := TLSGenerateX509Cer(TLSCerTypeCert)
 
 	certPrivateKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	if err != nil {
@@ -85,7 +85,7 @@ func TlsCertSetup() (serverTLSConf *tls.Config, clientTLSConf *tls.Config, err e
 	return
 }
 
-func GenerateX509Cer(cerType uint) *x509.Certificate {
+func TLSGenerateX509Cer(cerType uint) *x509.Certificate {
 	cer := &x509.Certificate{
 		SerialNumber: big.NewInt(2022),
 		Subject: pkix.Name{
@@ -102,13 +102,13 @@ func GenerateX509Cer(cerType uint) *x509.Certificate {
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
 	}
 
-	if cerType == CerTypeCA {
+	if cerType == TLSCerTypeCA {
 		cer.IsCA = true
 		cer.KeyUsage = x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign
 		cer.BasicConstraintsValid = true
 	}
 
-	if cerType == CerTypeCert {
+	if cerType == TLSCerTypeCert {
 		cer.KeyUsage = x509.KeyUsageDigitalSignature
 		cer.IPAddresses = []net.IP{net.IPv4(127, 0, 0, 1), net.IPv6loopback}
 	}

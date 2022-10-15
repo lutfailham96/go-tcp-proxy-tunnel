@@ -4,7 +4,8 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	proxy "github.com/lutfailham96/go-tcp-proxy-tunnel"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/pkg/proxy"
 	"net"
 	"os"
 )
@@ -26,7 +27,7 @@ var (
 func main() {
 	flag.Parse()
 
-	config := &proxy.Config{
+	config := &common.Config{
 		ServerProxyMode:     *serverProxyMode,
 		BufferSize:          *bufferSize,
 		LocalAddress:        *localAddr,
@@ -70,7 +71,7 @@ func resolveAddr(addr string) *net.TCPAddr {
 	return tcpAddr
 }
 
-func loopListener(listener net.Listener, config *proxy.Config) {
+func loopListener(listener net.Listener, config *common.Config) {
 	var connId = uint64(0)
 	for {
 		conn, err := listener.Accept()
@@ -80,8 +81,7 @@ func loopListener(listener net.Listener, config *proxy.Config) {
 		}
 		connId += 1
 
-		var p *proxy.Proxy
-		p = p.New(connId, conn, config.LocalAddressTCP, config.RemoteAddressTCP)
+		p := proxy.NewProxy(connId, conn, config.LocalAddressTCP, config.RemoteAddressTCP)
 		if config.ServerHost != "" {
 			p.SetServerHost(config.ServerHost)
 		}
@@ -99,7 +99,7 @@ func loopListener(listener net.Listener, config *proxy.Config) {
 	}
 }
 
-func parseConfig(config *proxy.Config, configFile string) {
+func parseConfig(config *common.Config, configFile string) {
 	if configFile != "" {
 		file, err := os.Open(configFile)
 		if err != nil {

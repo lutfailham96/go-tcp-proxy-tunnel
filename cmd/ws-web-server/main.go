@@ -4,7 +4,8 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	proxy "github.com/lutfailham96/go-tcp-proxy-tunnel"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"net"
 	"sync"
 )
@@ -32,7 +33,7 @@ func setupTcpListener(secure bool) {
 	var err error
 
 	if secure {
-		tlsConfig, _, err := proxy.TlsCertSetup()
+		tlsConfig, _, err := util.TLSGenerateConfig()
 		if err != nil {
 			fmt.Printf("Cannot setup tls certificates '%s'", err)
 		}
@@ -55,7 +56,7 @@ func setupTcpListener(secure bool) {
 			continue
 		}
 		connId += 1
-		fwd := proxy.NewWebForwarder(connId, src)
+		fwd := tcp.NewWebForwarder(connId, src)
 		fwd.SetDstAddress(*backendAddress)
 		go fwd.Start()
 	}

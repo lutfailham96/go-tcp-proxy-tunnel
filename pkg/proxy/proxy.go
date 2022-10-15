@@ -4,32 +4,11 @@ import (
 	"bytes"
 	"crypto/tls"
 	"fmt"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 	"net"
 	"strconv"
 	"strings"
 )
-
-type Host struct {
-	hostName string
-	port     uint64
-}
-
-type Config struct {
-	BufferSize          uint64
-	ServerProxyMode     bool
-	ProxyInfo           string
-	LocalAddress        string
-	RemoteAddress       string
-	LocalAddressTCP     *net.TCPAddr
-	RemoteAddressTCP    *net.TCPAddr
-	ServerHost          string
-	DisableServerResolv bool
-	ConnectionInfo      string
-	TLSEnabled          bool
-	SNIHost             string
-	LocalPayload        string
-	RemotePayload       string
-}
 
 type Proxy struct {
 	conn                 net.Conn
@@ -37,7 +16,7 @@ type Proxy struct {
 	rConn                net.Conn
 	lAddr                *net.TCPAddr
 	rAddr                *net.TCPAddr
-	sHost                Host
+	sHost                tcp.Host
 	tlsEnabled           bool
 	sniHost              string
 	lPayload             []byte
@@ -54,7 +33,7 @@ type Proxy struct {
 	wsUpgradeInitialized bool
 }
 
-func (p *Proxy) New(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Proxy {
+func NewProxy(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Proxy {
 	return &Proxy{
 		conn:                 conn,
 		lConn:                conn,
@@ -74,9 +53,9 @@ func (p *Proxy) New(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Pr
 }
 
 func (p *Proxy) SetlPayload(lPayload string) {
-	if p.sHost.hostName != "" {
-		lPayload = strings.Replace(lPayload, "[host]", p.sHost.hostName, -1)
-		lPayload = strings.Replace(lPayload, "[host_port]", fmt.Sprintf("%s:%d", p.sHost.hostName, p.sHost.port), -1)
+	if p.sHost.HostName != "" {
+		lPayload = strings.Replace(lPayload, "[host]", p.sHost.HostName, -1)
+		lPayload = strings.Replace(lPayload, "[host_port]", fmt.Sprintf("%s:%d", p.sHost.HostName, p.sHost.Port), -1)
 	}
 	if p.sniHost != "" {
 		lPayload = strings.Replace(lPayload, "[sni]", p.sniHost, -1)
@@ -108,9 +87,9 @@ func (p *Proxy) SetServerHost(server string) {
 		fmt.Printf("Cannot parse server port '%s'", err)
 		return
 	}
-	p.sHost = Host{
-		hostName: sHost,
-		port:     sPortParsed,
+	p.sHost = tcp.Host{
+		HostName: sHost,
+		Port:     sPortParsed,
 	}
 }
 
@@ -127,7 +106,7 @@ func (p *Proxy) SetSNIHost(hostname string) {
 }
 
 func (p *Proxy) Start() {
-	defer p.closeConnection(p.lConn)
+	defer tcp.CloseConnection(p.lConn)
 
 	var err error
 	if p.tlsEnabled {
@@ -142,7 +121,7 @@ func (p *Proxy) Start() {
 		fmt.Printf("Cannot dial remote connection '%s'", err)
 		return
 	}
-	defer p.closeConnection(p.rConn)
+	defer tcp.CloseConnection(p.rConn)
 
 	fmt.Printf("CONN #%d opened %s >> %s\n", p.connId, p.lAddr, p.rAddr)
 
@@ -234,12 +213,4 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 	}
 
 	p.rInitialized = true
-}
-
-func (p *Proxy) closeConnection(conn net.Conn) {
-	err := conn.Close()
-	if err != nil {
-		fmt.Printf("Cannot close connection '%s'", err)
-		return
-	}
 }
