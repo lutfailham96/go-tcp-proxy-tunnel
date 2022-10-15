@@ -1,13 +1,11 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/pkg/proxy"
 	"net"
-	"os"
 )
 
 var (
@@ -27,6 +25,13 @@ var (
 func main() {
 	flag.Parse()
 
+	cmdArgs := &common.CmdArgs{
+		LocalAddress:        *localAddr,
+		RemoteAddress:       *remoteAddr,
+		ServerHost:          *serverHost,
+		DisableServerResolv: *disableServerResolv,
+	}
+
 	config := &common.Config{
 		ServerProxyMode:     *serverProxyMode,
 		BufferSize:          *bufferSize,
@@ -39,7 +44,7 @@ func main() {
 		TLSEnabled:          *tlsEnabled,
 		SNIHost:             *sniHost,
 	}
-	parseConfig(config, *configFile)
+	common.ParseConfig(config, *configFile, cmdArgs)
 
 	listener, err := net.Listen("tcp", config.LocalAddressTCP.String())
 	if err != nil {
@@ -55,23 +60,10 @@ func main() {
 	}
 	fmt.Printf("\ngo-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP)
 
-	loopListener(listener, config)
+	handleListener(listener, config)
 }
 
-func resolveAddr(addr string) *net.TCPAddr {
-	if addr == "" {
-		fmt.Println("Host address is not valid or empty")
-		os.Exit(1)
-	}
-	tcpAddr, err := net.ResolveTCPAddr("tcp", addr)
-	if err != nil {
-		fmt.Printf("Failed to resolve local address: %s", err)
-		os.Exit(1)
-	}
-	return tcpAddr
-}
-
-func loopListener(listener net.Listener, config *common.Config) {
+func handleListener(listener net.Listener, config *common.Config) {
 	var connId = uint64(0)
 	for {
 		conn, err := listener.Accept()
@@ -96,70 +88,5 @@ func loopListener(listener net.Listener, config *common.Config) {
 		p.SetrPayload(config.RemotePayload)
 		p.SetServerProxyMode(config.ServerProxyMode)
 		go p.Start()
-	}
-}
-
-func parseConfig(config *common.Config, configFile string) {
-	if configFile != "" {
-		file, err := os.Open(configFile)
-		if err != nil {
-			fmt.Printf("Cannot open file '%s'", err)
-			os.Exit(1)
-			return
-		}
-		defer func(file *os.File) {
-			err = file.Close()
-			if err != nil {
-				fmt.Printf("Cannot close file '%s", err)
-				return
-			}
-		}(file)
-
-		jsonDecoder := json.NewDecoder(file)
-		err = jsonDecoder.Decode(config)
-		if err != nil {
-			fmt.Printf("Cannot decode config file '%s'", err)
-			os.Exit(1)
-			return
-		}
-	}
-
-	localAddress := *localAddr
-	if config.LocalAddress != "" {
-		localAddress = config.LocalAddress
-	}
-	config.LocalAddressTCP = resolveAddr(localAddress)
-
-	remoteAddress := *remoteAddr
-	if config.RemoteAddress != "" {
-		remoteAddress = config.RemoteAddress
-	}
-	config.RemoteAddressTCP = resolveAddr(remoteAddress)
-
-	serverHostAddr := *serverHost
-	if config.ServerHost != "" {
-		serverHostAddr = config.ServerHost
-	}
-	if serverHostAddr != "" && !*disableServerResolv {
-		resolveAddr(serverHostAddr)
-	}
-
-	config.ConnectionInfo = "insecure"
-	if config.TLSEnabled {
-		if config.SNIHost == "" {
-			fmt.Println("SNI hostname required on secure connection")
-			os.Exit(1)
-			return
-		}
-		config.ConnectionInfo = "secure (TLS)"
-	}
-
-	if config.BufferSize == 0 {
-		config.BufferSize = 0xffff
-	}
-
-	config.ProxyInfo = "client proxy"
-	if config.ServerProxyMode {
-		config.ProxyInfo = "server proxy"
 	}
 }
