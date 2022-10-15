@@ -29,7 +29,7 @@ func (fwd *WebForwarder) SetDstAddress(dstAddress string) {
 }
 
 func (fwd *WebForwarder) Start() {
-	defer fwd.srcConn.Close()
+	defer CloseConnection(fwd.srcConn)
 
 	fmt.Printf("CONN #%d opened from %s\n", fwd.connectionId, fwd.srcConn.RemoteAddr())
 
@@ -48,7 +48,7 @@ func (fwd *WebForwarder) Start() {
 		fmt.Printf("Cannot connect to backend '%s'", err)
 		return
 	}
-	defer fwd.dstConn.Close()
+	defer CloseConnection(fwd.dstConn)
 
 	// initial forward tcp connection to backend
 	fwd.dstConn.Write(b)
