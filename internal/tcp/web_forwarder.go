@@ -40,6 +40,7 @@ func (fwd *WebForwarder) Start() {
 	b := buff[0:nr]
 	if !strings.Contains(strings.ToLower(string(b)), "upgrade: websocket") {
 		fwd.srcConn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\nNo valid websocket request"))
+		fmt.Printf("CONN #%d closed\n", fwd.connectionId)
 		return
 	}
 
@@ -85,6 +86,6 @@ func (fwd *WebForwarder) err() {
 	if fwd.erred {
 		return
 	}
-	fwd.erred = true
 	fwd.errCh <- true
+	fwd.erred = true
 }
