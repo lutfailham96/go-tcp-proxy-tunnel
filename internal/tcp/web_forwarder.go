@@ -45,7 +45,7 @@ func (fwd *WebForwarder) Start() {
 
 	fwd.dstConn, err = net.Dial("tcp", fwd.dstAddress)
 	if err != nil {
-		fmt.Printf("Cannot connect to backend '%s'", err)
+		fmt.Printf("Cannot connect to backend '%s'\n", err)
 		return
 	}
 	defer CloseConnection(fwd.dstConn)

@@ -79,12 +79,12 @@ func (p *Proxy) SetServerProxyMode(enabled bool) {
 func (p *Proxy) SetServerHost(server string) {
 	sHost, sPort, err := net.SplitHostPort(server)
 	if err != nil {
-		fmt.Printf("Cannot parse server host port '%s'", err)
+		fmt.Printf("Cannot parse server host port '%s'\n", err)
 		return
 	}
 	sPortParsed, err := strconv.ParseUint(sPort, 10, 64)
 	if err != nil {
-		fmt.Printf("Cannot parse server port '%s'", err)
+		fmt.Printf("Cannot parse server port '%s'\n", err)
 		return
 	}
 	p.sHost = tcp.Host{
@@ -118,7 +118,7 @@ func (p *Proxy) Start() {
 		p.rConn, err = net.DialTCP("tcp", nil, p.rAddr)
 	}
 	if err != nil {
-		fmt.Printf("Cannot dial remote connection '%s'", err)
+		fmt.Printf("Cannot dial remote connection '%s'\n", err)
 		return
 	}
 	defer tcp.CloseConnection(p.rConn)
@@ -148,7 +148,7 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 	for {
 		n, err := src.Read(buffer)
 		if err != nil {
-			//fmt.Printf("Cannot read buffer from source '%s'", err)
+			//fmt.Printf("Cannot read buffer from source '%s'\n", err)
 			p.err()
 			return
 		}
@@ -166,7 +166,7 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 			n, err = dst.Write(connBuff)
 		}
 		if err != nil {
-			//fmt.Printf("Cannot write buffer to destination '%s'", err)
+			//fmt.Printf("Cannot write buffer to destination '%s'\n", err)
 			p.err()
 			return
 		}

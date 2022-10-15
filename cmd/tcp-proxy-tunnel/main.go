@@ -48,7 +48,7 @@ func main() {
 
 	listener, err := net.Listen("tcp", config.LocalAddressTCP.String())
 	if err != nil {
-		fmt.Printf("Failed to open local port to listen: %s", err)
+		fmt.Printf("Failed to open local port to listen: %s\n", err)
 		return
 	}
 
@@ -68,7 +68,7 @@ func handleListener(listener net.Listener, config *common.Config) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Printf("Failed to accept connection '%s'", err)
+			fmt.Printf("Failed to accept connection '%s'\n", err)
 			return
 		}
 		connId += 1

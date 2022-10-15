@@ -35,7 +35,7 @@ func setupTcpListener(secure bool) {
 	if secure {
 		tlsConfig, _, err := util.TLSGenerateConfig()
 		if err != nil {
-			fmt.Printf("Cannot setup tls certificates '%s'", err)
+			fmt.Printf("Cannot setup tls certificates '%s'\n", err)
 		}
 		tcp.ResolveAddr(*httpsAddress)
 		ln, err = tls.Listen("tcp", *httpsAddress, tlsConfig)

@@ -69,7 +69,7 @@ func ParseConfig(config *Config, configFile string, cmdArgs *CmdArgs) {
 	config.ConnectionInfo = "insecure"
 	if config.TLSEnabled {
 		if config.SNIHost == "" {
-			fmt.Println("SNI hostname required on secure connection")
+			fmt.Printf("SNI hostname required on secure connection\n")
 			os.Exit(1)
 			return
 		}
@@ -83,14 +83,14 @@ func loadConfigFile(cfgFile string, cfg *Config) {
 	if cfgFile != "" {
 		file, err := os.Open(cfgFile)
 		if err != nil {
-			fmt.Printf("Cannot open file '%s'", err)
+			fmt.Printf("Cannot open file '%s'\n", err)
 			os.Exit(1)
 			return
 		}
 		defer func(file *os.File) {
 			err = file.Close()
 			if err != nil {
-				fmt.Printf("Cannot close file '%s", err)
+				fmt.Printf("Cannot close file '%s'\n", err)
 				return
 			}
 		}(file)
@@ -98,7 +98,7 @@ func loadConfigFile(cfgFile string, cfg *Config) {
 		jsonDecoder := json.NewDecoder(file)
 		err = jsonDecoder.Decode(cfg)
 		if err != nil {
-			fmt.Printf("Cannot decode config file '%s'", err)
+			fmt.Printf("Cannot decode config file '%s'\n", err)
 			os.Exit(1)
 			return
 		}
