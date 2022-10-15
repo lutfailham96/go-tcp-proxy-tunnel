@@ -216,6 +216,5 @@ $ go-tcp-proxy-tunnel -c config.json
 
 ### Todo
 
-* Fix direct TLS stuck / connection early closed issue
 * Add unit test
-* Add build & linting CI using GitHub workflow
+* Add linting CI using GitHub workflow
