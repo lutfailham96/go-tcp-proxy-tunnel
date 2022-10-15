@@ -13,6 +13,7 @@ type WebForwarder struct {
 	srcConn      net.Conn
 	dstConn      net.Conn
 	dstAddress   string
+	erred        bool
 }
 
 func NewWebForwarder(connId uint64, src net.Conn) *WebForwarder {
@@ -20,7 +21,8 @@ func NewWebForwarder(connId uint64, src net.Conn) *WebForwarder {
 		connectionId: connId,
 		bufferSize:   0xffff,
 		srcConn:      src,
-		errCh:        make(chan bool, 1),
+		errCh:        make(chan bool, 2),
+		erred:        false,
 	}
 }
 
@@ -80,5 +82,9 @@ func (fwd *WebForwarder) handleForwardData(src net.Conn, dst net.Conn) {
 }
 
 func (fwd *WebForwarder) err() {
+	if fwd.erred {
+		return
+	}
+	fwd.erred = true
 	fwd.errCh <- true
 }
