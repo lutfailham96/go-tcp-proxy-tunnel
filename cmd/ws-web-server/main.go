@@ -58,7 +58,7 @@ func setupTcpListener(secure bool) {
 			continue
 		}
 		connId += 1
-		fwd := tcp.NewWebForwarder(connId, src)
+		fwd := tcp.NewWebForwarder(connId, src, secure)
 		fwd.SetDstAddress(*backendAddress)
 		go fwd.Start()
 	}
