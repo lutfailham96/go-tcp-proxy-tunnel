@@ -59,7 +59,7 @@ func (fwd *WebForwarder) Start() {
 
 	remoteKind := "ssh"
 	remoteAddress := fwd.dstAddress
-	if !strings.Contains(strings.ToLower(string(b)), "/ws-trojan") {
+	if strings.Contains(strings.ToLower(string(b)), "/ws-trojan") {
 		remoteAddress = fwd.trjAddress
 		remoteKind = "trojan"
 	}
