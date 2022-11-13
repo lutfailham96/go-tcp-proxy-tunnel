@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"crypto/tls"
 	"fmt"
 	"net"
 	"strings"
@@ -66,7 +67,13 @@ func (fwd *WebForwarder) Start() {
 
 	fmt.Printf("%s websocket (%s) session opened from %s\n", fwd.connInfoPrefix, remoteKind, fwd.srcConn.RemoteAddr())
 
-	fwd.dstConn, err = net.Dial("tcp", remoteAddress)
+	if fwd.secure {
+		fwd.dstConn, err = tls.Dial("tcp", remoteAddress, &tls.Config{
+			InsecureSkipVerify: true,
+		})
+	} else {
+		fwd.dstConn, err = net.Dial("tcp", remoteAddress)
+	}
 	if err != nil {
 		fmt.Printf("%s cannot connect to backend '%s'\n", fwd.connInfoPrefix, err)
 		return
