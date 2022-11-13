@@ -57,12 +57,14 @@ func (fwd *WebForwarder) Start() {
 		return
 	}
 
-	fmt.Printf("%s websocket session opened from %s\n", fwd.connInfoPrefix, fwd.srcConn.RemoteAddr())
-
-	var remoteAddress string
+	remoteKind := "ssh"
+	remoteAddress := fwd.dstAddress
 	if !strings.Contains(strings.ToLower(string(b)), "/ws-trojan") {
 		remoteAddress = fwd.trjAddress
+		remoteKind = "trojan"
 	}
+
+	fmt.Printf("%s websocket (%s) session opened from %s\n", fwd.connInfoPrefix, remoteKind, fwd.srcConn.RemoteAddr())
 
 	fwd.dstConn, err = net.Dial("tcp", remoteAddress)
 	if err != nil {
