@@ -15,6 +15,7 @@ type WebForwarder struct {
 	srcConn        net.Conn
 	dstConn        net.Conn
 	dstAddress     string
+	trjAddress     string
 	erred          bool
 }
 
@@ -38,6 +39,10 @@ func (fwd *WebForwarder) SetDstAddress(dstAddress string) {
 	fwd.dstAddress = dstAddress
 }
 
+func (fwd *WebForwarder) SetTrjAddress(trjAddress string) {
+	fwd.trjAddress = trjAddress
+}
+
 func (fwd *WebForwarder) Start() {
 	defer CloseConnection(fwd.srcConn)
 
@@ -54,7 +59,12 @@ func (fwd *WebForwarder) Start() {
 
 	fmt.Printf("%s websocket session opened from %s\n", fwd.connInfoPrefix, fwd.srcConn.RemoteAddr())
 
-	fwd.dstConn, err = net.Dial("tcp", fwd.dstAddress)
+	var remoteAddress string
+	if !strings.Contains(strings.ToLower(string(b)), "/ws-trojan") {
+		remoteAddress = fwd.trjAddress
+	}
+
+	fwd.dstConn, err = net.Dial("tcp", remoteAddress)
 	if err != nil {
 		fmt.Printf("%s cannot connect to backend '%s'\n", fwd.connInfoPrefix, err)
 		return

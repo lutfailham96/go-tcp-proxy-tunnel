@@ -14,6 +14,7 @@ var (
 	httpAddress    = flag.String("l", "0.0.0.0:80", "http listen address")
 	httpsAddress   = flag.String("ln", "0.0.0.0:443", "https listen address")
 	backendAddress = flag.String("b", "127.0.0.1:8082", "backend proxy address")
+	trojanAddress  = flag.String("t", "127.0.0.1:433", "trojan backend address")
 )
 
 func main() {
@@ -60,6 +61,7 @@ func setupTcpListener(secure bool) {
 		connId += 1
 		fwd := tcp.NewWebForwarder(connId, src, secure)
 		fwd.SetDstAddress(*backendAddress)
+		fwd.SetTrjAddress(*trojanAddress)
 		go fwd.Start()
 	}
 }
