@@ -13,6 +13,8 @@ import (
 var (
 	httpAddress    = flag.String("l", "0.0.0.0:80", "http listen address")
 	httpsAddress   = flag.String("ln", "0.0.0.0:443", "https listen address")
+	tlsCert        = flag.String("cert", "", "tls cert pem")
+	tlsKey         = flag.String("key", "", "tls key pem")
 	backendAddress = flag.String("b", "127.0.0.1:8082", "backend proxy address")
 	trojanAddress  = flag.String("t", "127.0.0.1:433", "trojan backend address")
 )
@@ -34,9 +36,20 @@ func setupTcpListener(secure bool) {
 	var err error
 
 	if secure {
-		tlsConfig, _, err := util.TLSGenerateConfig()
-		if err != nil {
-			fmt.Printf("Cannot setup tls certificates '%s'\n", err)
+		var tlsConfig *tls.Config
+		if *tlsCert != "" && *tlsKey != "" {
+			cer, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
+			if err != nil {
+				fmt.Printf("Cannot read tls key pair '%s'\n", err)
+			}
+			tlsConfig = &tls.Config{
+				Certificates: []tls.Certificate{cer},
+			}
+		} else {
+			tlsConfig, _, err = util.TLSGenerateConfig()
+			if err != nil {
+				fmt.Printf("Cannot setup tls certificates '%s'\n", err)
+			}
 		}
 		tcp.ResolveAddr(*httpsAddress)
 		ln, err = tls.Listen("tcp", *httpsAddress, tlsConfig)
