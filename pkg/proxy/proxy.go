@@ -236,11 +236,12 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 		respArr = append(respArr, buffScanner.Text())
 	}
 	if strings.Contains(respArr[0], " 101 ") && p.proxyKind == "ssh" {
-		respArr[0] = "HTTP/1.1 200 Connections Established"
+		respArr[0] = strings.Replace(string(p.rPayload), "\r\n", "", -1)
 	}
-	if strings.Contains(respArr[0], " 301 ") || strings.Contains(respArr[0], "302") {
-		respArr[0] = "HTTP/1.1 101 Switching Protocols"
-	}
+	// TODO handle redirect 301 / 302
+	//if strings.Contains(respArr[0], " 301 ") || strings.Contains(respArr[0], "302") {
+	//	respArr[0] = "HTTP/1.1 101 Switching Protocols"
+	//}
 	*connBuff = []byte(strings.Join(respArr, "\r\n") + "\r\n")
 	fmt.Println(string(*connBuff))
 
