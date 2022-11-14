@@ -242,8 +242,11 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 	//if strings.Contains(respArr[0], " 301 ") || strings.Contains(respArr[0], "302") {
 	//	respArr[0] = "HTTP/1.1 101 Switching Protocols"
 	//}
-	*connBuff = []byte(strings.Join(respArr, "\r\n") + "\r\n")
-	fmt.Println(string(*connBuff))
+
+	if !p.serverProxyMode {
+		*connBuff = []byte(strings.Join(respArr, "\r\n") + "\r\n")
+		fmt.Println(string(*connBuff))
+	}
 
 	p.rInitialized = true
 }
