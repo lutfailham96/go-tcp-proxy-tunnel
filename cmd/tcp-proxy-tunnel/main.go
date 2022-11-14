@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/tls"
 	"flag"
 	"fmt"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/pkg/proxy"
 	"net"
 )
@@ -20,6 +22,8 @@ var (
 	tlsEnabled          = flag.Bool("tls", false, "enable tls/secure connection")
 	sniHost             = flag.String("sni", "", "SNI hostname")
 	configFile          = flag.String("c", "", "load config from JSON file")
+	tlsCert             = flag.String("cert", "", "tls cert pem file")
+	tlsKey              = flag.String("key", "", "tls key pem file")
 )
 
 func main() {
@@ -42,11 +46,42 @@ func main() {
 		LocalPayload:        *localPayload,
 		RemotePayload:       *remotePayload,
 		TLSEnabled:          *tlsEnabled,
+		TLSCert:             *tlsCert,
+		TLSKey:              *tlsKey,
 		SNIHost:             *sniHost,
 	}
 	common.ParseConfig(config, *configFile, cmdArgs)
 
-	listener, err := net.Listen("tcp", config.LocalAddressTCP.String())
+	var listener net.Listener
+	var err error
+	if config.TLSEnabled {
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+			ServerName:         config.SNIHost,
+		}
+		if config.TLSCert != "" && config.TLSKey != "" {
+			cert, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
+			if err != nil {
+				fmt.Printf("Cannot load tls key pair '%s'\n", err)
+				return
+			}
+			tlsConfig.Certificates = []tls.Certificate{cert}
+		} else {
+			serverConf, _, err := util.TLSGenerateConfig()
+			if err != nil {
+				fmt.Printf("Cannot generate tls key pair '%s'\n", err)
+				return
+			}
+			tlsConfig.Certificates = serverConf.Certificates
+		}
+		listener, err = tls.Listen("tcp", config.LocalAddressTCP.String(), tlsConfig)
+		if err != nil {
+			fmt.Printf("Failed to open local port to listen: %s\n", err)
+			return
+		}
+	} else {
+		listener, err = net.Listen("tcp", config.LocalAddressTCP.String())
+	}
 	if err != nil {
 		fmt.Printf("Failed to open local port to listen: %s\n", err)
 		return

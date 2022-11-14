@@ -20,6 +20,8 @@ type Config struct {
 	DisableServerResolv bool
 	ConnectionInfo      string
 	TLSEnabled          bool
+	TLSCert             string
+	TLSKey              string
 	SNIHost             string
 	LocalPayload        string
 	RemotePayload       string
