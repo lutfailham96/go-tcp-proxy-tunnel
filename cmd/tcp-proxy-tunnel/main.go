@@ -91,6 +91,7 @@ func main() {
 	}
 
 	fmt.Printf("Mode\t\t: %s\n", config.ProxyInfo)
+	fmt.Printf("Proxy Kind\t: %s\n", config.ProxyKind)
 	fmt.Printf("Buffer size\t: %d\n", config.BufferSize)
 	fmt.Printf("Connection\t: %s\n", config.ConnectionInfo)
 	if config.TLSEnabled {
