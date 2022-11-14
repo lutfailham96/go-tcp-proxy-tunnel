@@ -1,7 +1,7 @@
 package proxy
 
 import (
-	"bytes"
+	"bufio"
 	"crypto/tls"
 	"fmt"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
@@ -12,6 +12,7 @@ import (
 
 type Proxy struct {
 	connectionInfoPrefix string
+	proxyKind            string
 	conn                 net.Conn
 	lConn                net.Conn
 	rConn                net.Conn
@@ -107,6 +108,10 @@ func (p *Proxy) SetSNIHost(hostname string) {
 	p.sniHost = hostname
 }
 
+func (p *Proxy) SetProxyKind(proxyKind string) {
+	p.proxyKind = proxyKind
+}
+
 func (p *Proxy) Start() {
 	defer tcp.CloseConnection(p.lConn)
 
@@ -187,15 +192,30 @@ func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 	}
 
 	fmt.Printf("%s %s >> %s >> %s\n", p.connectionInfoPrefix, src.RemoteAddr(), p.conn.LocalAddr(), dst.RemoteAddr())
+
+	var respArr []string
+	doUpgrade := false
+	buffScanner := bufio.NewScanner(strings.NewReader(string(*connBuff)))
+	for buffScanner.Scan() {
+		respArr = append(respArr, buffScanner.Text())
+		if strings.Contains(strings.ToLower(buffScanner.Text()), "upgrade: websocket") {
+			doUpgrade = true
+		}
+	}
+
 	if p.serverProxyMode {
-		if strings.Contains(strings.ToLower(string(*connBuff)), "upgrade: websocket") {
+		if doUpgrade {
 			fmt.Printf("%s connection upgrade to Websocket\n", p.connectionInfoPrefix)
 			*connBuff = []byte("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
 			p.wsUpgradeInitialized = true
 		}
 	} else {
-		if bytes.Contains(*connBuff, []byte("CONNECT ")) {
+		if strings.Contains(respArr[0], "CONNECT ") {
 			*connBuff = p.lPayload
+			fmt.Println(string(*connBuff))
+		}
+		if strings.Contains(respArr[0], "GET /ws-trojan ") {
+			*connBuff = []byte(strings.Replace(string(*connBuff), "/ws-trojan", fmt.Sprintf("wss://%s/ws-trojan", p.sniHost), -1))
 			fmt.Println(string(*connBuff))
 		}
 	}
@@ -209,10 +229,20 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 	}
 
 	fmt.Printf("%s %s << %s << %s\n", p.connectionInfoPrefix, dst.RemoteAddr(), p.conn.LocalAddr(), src.RemoteAddr())
-	if bytes.Contains(*connBuff, []byte("HTTP/1.")) && !p.serverProxyMode {
-		*connBuff = p.rPayload
-		fmt.Println(string(*connBuff))
+
+	var respArr []string
+	buffScanner := bufio.NewScanner(strings.NewReader(string(*connBuff)))
+	for buffScanner.Scan() {
+		respArr = append(respArr, buffScanner.Text())
 	}
+	if strings.Contains(respArr[0], " 101 ") && p.proxyKind == "ssh" {
+		respArr[0] = "HTTP/1.1 200 Connections Established"
+	}
+	if strings.Contains(respArr[0], " 301 ") || strings.Contains(respArr[0], "302") {
+		respArr[0] = "HTTP/1.1 101 Switching Protocols"
+	}
+	*connBuff = []byte(strings.Join(respArr, "\r\n") + "\r\n")
+	fmt.Println(string(*connBuff))
 
 	p.rInitialized = true
 }
