@@ -24,6 +24,7 @@ var (
 	configFile          = flag.String("c", "", "load config from JSON file")
 	tlsCert             = flag.String("cert", "", "tls cert pem file")
 	tlsKey              = flag.String("key", "", "tls key pem file")
+	proxyKind           = flag.String("k", "ssh", "proxy kind [ssh, trojan] (default: ssh)")
 )
 
 func main() {
@@ -34,10 +35,12 @@ func main() {
 		RemoteAddress:       *remoteAddr,
 		ServerHost:          *serverHost,
 		DisableServerResolv: *disableServerResolv,
+		ProxyKind:           *proxyKind,
 	}
 
 	config := &common.Config{
 		ServerProxyMode:     *serverProxyMode,
+		ProxyKind:           *proxyKind,
 		BufferSize:          *bufferSize,
 		LocalAddress:        *localAddr,
 		RemoteAddress:       *remoteAddr,
@@ -54,7 +57,7 @@ func main() {
 
 	var listener net.Listener
 	var err error
-	if config.TLSEnabled {
+	if config.TLSEnabled && config.ProxyKind != "ssh" {
 		tlsConfig := &tls.Config{
 			InsecureSkipVerify: true,
 			ServerName:         config.SNIHost,
@@ -122,6 +125,7 @@ func handleListener(listener net.Listener, config *common.Config) {
 		p.SetlPayload(config.LocalPayload)
 		p.SetrPayload(config.RemotePayload)
 		p.SetServerProxyMode(config.ServerProxyMode)
+		p.SetProxyKind(config.ProxyKind)
 		go p.Start()
 	}
 }
