@@ -11,6 +11,7 @@ import (
 type Config struct {
 	BufferSize          uint64
 	ServerProxyMode     bool
+	ProxyKind           string
 	ProxyInfo           string
 	LocalAddress        string
 	RemoteAddress       string
@@ -32,6 +33,7 @@ type CmdArgs struct {
 	RemoteAddress       string
 	ServerHost          string
 	DisableServerResolv bool
+	ProxyKind           string
 }
 
 func (cfg *Config) setDefaults() {
