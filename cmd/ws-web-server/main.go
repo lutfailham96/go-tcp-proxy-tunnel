@@ -7,6 +7,7 @@ import (
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"net"
+	"os"
 	"sync"
 )
 
@@ -17,10 +18,16 @@ var (
 	tlsKey         = flag.String("key", "", "tls key pem")
 	backendAddress = flag.String("b", "127.0.0.1:8082", "backend proxy address")
 	trojanAddress  = flag.String("t", "127.0.0.1:433", "trojan backend address")
+	sni            = flag.String("sni", "", "server name identification")
 )
 
 func main() {
 	flag.Parse()
+
+	if *sni == "" {
+		fmt.Println("SNI required!")
+		os.Exit(1)
+	}
 
 	var tcpWg sync.WaitGroup
 
@@ -76,6 +83,7 @@ func setupTcpListener(secure bool) {
 		fwd := tcp.NewWebForwarder(connId, src, secure)
 		fwd.SetDstAddress(*backendAddress)
 		fwd.SetTrjAddress(*trojanAddress)
+		fwd.SetSNI(*sni)
 		go fwd.Start()
 	}
 }
