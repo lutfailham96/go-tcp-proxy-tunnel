@@ -67,6 +67,7 @@ func setupTcpListener(secure bool) {
 		ln, err = net.Listen("tcp", *httpAddress)
 		fmt.Printf("TCP listen on:\t\t%s\n", *httpAddress)
 	}
+	fmt.Printf("SNI:\t\t%s\n\n", *sni)
 	if err != nil {
 		fmt.Printf("Cannot bind port '%s'\n", err)
 		return
