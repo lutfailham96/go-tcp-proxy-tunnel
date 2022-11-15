@@ -32,6 +32,7 @@ func main() {
 	var tcpWg sync.WaitGroup
 
 	tcpWg.Add(2)
+	fmt.Printf("SNI:\t\t\t%s\n", *sni)
 	go setupTcpListener(false)
 	go setupTcpListener(true)
 
@@ -67,7 +68,6 @@ func setupTcpListener(secure bool) {
 		ln, err = net.Listen("tcp", *httpAddress)
 		fmt.Printf("TCP listen on:\t\t%s\n", *httpAddress)
 	}
-	fmt.Printf("SNI:\t\t%s\n\n", *sni)
 	if err != nil {
 		fmt.Printf("Cannot bind port '%s'\n", err)
 		return
