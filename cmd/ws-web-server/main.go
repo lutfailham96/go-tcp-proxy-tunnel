@@ -43,7 +43,8 @@ func setupTcpListener(secure bool) {
 				fmt.Printf("Cannot read tls key pair '%s'\n", err)
 			}
 			tlsConfig = &tls.Config{
-				Certificates: []tls.Certificate{cer},
+				InsecureSkipVerify: true,
+				Certificates:       []tls.Certificate{cer},
 			}
 		} else {
 			tlsConfig, _, err = util.TLSGenerateConfig()
