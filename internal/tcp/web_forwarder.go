@@ -72,7 +72,7 @@ func (fwd *WebForwarder) Start() {
 
 	fmt.Printf("%s websocket (%s) session opened from %s\n", fwd.connInfoPrefix, remoteKind, fwd.srcConn.RemoteAddr())
 
-	if fwd.secure && remoteKind != "ssh" {
+	if fwd.secure || (!fwd.secure && remoteKind != "ssh") {
 		fwd.dstConn, err = tls.Dial("tcp", remoteAddress, &tls.Config{
 			InsecureSkipVerify: true,
 			ServerName:         fwd.sni,
