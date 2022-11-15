@@ -9,6 +9,7 @@ import (
 
 type WebForwarder struct {
 	secure         bool
+	sni            string
 	connInfoPrefix string
 	connectionId   uint64
 	bufferSize     uint64
@@ -44,6 +45,10 @@ func (fwd *WebForwarder) SetTrjAddress(trjAddress string) {
 	fwd.trjAddress = trjAddress
 }
 
+func (fwd *WebForwarder) SetSNI(sni string) {
+	fwd.sni = sni
+}
+
 func (fwd *WebForwarder) Start() {
 	defer CloseConnection(fwd.srcConn)
 
@@ -67,9 +72,10 @@ func (fwd *WebForwarder) Start() {
 
 	fmt.Printf("%s websocket (%s) session opened from %s\n", fwd.connInfoPrefix, remoteKind, fwd.srcConn.RemoteAddr())
 
-	if fwd.secure {
+	if fwd.secure && remoteKind != "ssh" {
 		fwd.dstConn, err = tls.Dial("tcp", remoteAddress, &tls.Config{
 			InsecureSkipVerify: true,
+			ServerName:         fwd.sni,
 		})
 	} else {
 		fwd.dstConn, err = net.Dial("tcp", remoteAddress)
