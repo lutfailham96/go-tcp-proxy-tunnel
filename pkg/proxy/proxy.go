@@ -216,12 +216,14 @@ func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 			p.wsUpgradeInitialized = true
 		}
 	} else {
-		if strings.Contains(respArr[0], "CONNECT ") {
+		if p.proxyKind == "ssh" && strings.Contains(respArr[0], "CONNECT ") {
 			*connBuff = p.lPayload
 			fmt.Println(string(*connBuff))
 		}
-		if strings.Contains(respArr[0], "GET /ws-trojan ") {
-			*connBuff = []byte(strings.Replace(string(*connBuff), "/ws-trojan", fmt.Sprintf("wss://%s/ws-trojan", p.sniHost), -1))
+		if p.proxyKind == "trojan" {
+			reqPath := strings.Split(respArr[0], " ")[1]
+			newReqPath := fmt.Sprintf(" wss://%s%s ", p.sniHost, reqPath)
+			*connBuff = []byte(strings.Replace(string(*connBuff), fmt.Sprintf(" %s ", reqPath), newReqPath, -1))
 			fmt.Println(string(*connBuff))
 		}
 	}
