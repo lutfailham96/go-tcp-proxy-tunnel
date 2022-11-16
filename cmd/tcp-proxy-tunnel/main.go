@@ -112,7 +112,7 @@ func handleListener(listener net.Listener, config *common.Config) {
 		}
 		connId += 1
 
-		p := proxy.NewProxy(connId, conn, config.LocalAddressTCP, config.RemoteAddressTCP)
+		p := proxy.NewProxy(connId, conn, config.LocalAddressTCP, config.RemoteAddressTCP, config.TLSEnabled)
 		if config.ServerHost != "" {
 			p.SetServerHost(config.ServerHost)
 		}

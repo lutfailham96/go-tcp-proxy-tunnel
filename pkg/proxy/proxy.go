@@ -11,6 +11,7 @@ import (
 )
 
 type Proxy struct {
+	secure               bool
 	connectionInfoPrefix string
 	proxyKind            string
 	conn                 net.Conn
@@ -35,9 +36,9 @@ type Proxy struct {
 	wsUpgradeInitialized bool
 }
 
-func NewProxy(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr) *Proxy {
+func NewProxy(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr, secure bool) *Proxy {
 	return &Proxy{
-		connectionInfoPrefix: fmt.Sprintf("CONN #%d", connId),
+		secure:               secure,
 		conn:                 conn,
 		lConn:                conn,
 		lAddr:                lAddr,
@@ -110,6 +111,11 @@ func (p *Proxy) SetSNIHost(hostname string) {
 
 func (p *Proxy) SetProxyKind(proxyKind string) {
 	p.proxyKind = proxyKind
+	connInfoPrefix := fmt.Sprintf("CONN %s #%d", p.proxyKind, p.connId)
+	if p.secure {
+		connInfoPrefix = fmt.Sprintf("CONN %s (TLS) #%d", p.proxyKind, p.connId)
+	}
+	p.connectionInfoPrefix = connInfoPrefix
 }
 
 func (p *Proxy) Start() {
