@@ -1,6 +1,7 @@
 package tcp
 
 import (
+	"bufio"
 	"crypto/tls"
 	"fmt"
 	"net"
@@ -18,6 +19,7 @@ type WebForwarder struct {
 	dstConn        net.Conn
 	dstAddress     string
 	trjAddress     string
+	trjWsPath      string
 	erred          bool
 }
 
@@ -41,8 +43,9 @@ func (fwd *WebForwarder) SetDstAddress(dstAddress string) {
 	fwd.dstAddress = dstAddress
 }
 
-func (fwd *WebForwarder) SetTrjAddress(trjAddress string) {
+func (fwd *WebForwarder) SetTrjConfig(trjAddress, trjWsPath string) {
 	fwd.trjAddress = trjAddress
+	fwd.trjWsPath = trjWsPath
 }
 
 func (fwd *WebForwarder) SetSNI(sni string) {
@@ -57,7 +60,18 @@ func (fwd *WebForwarder) Start() {
 	buff := make([]byte, fwd.bufferSize)
 	nr, err := fwd.srcConn.Read(buff)
 	b := buff[0:nr]
-	if !strings.Contains(strings.ToLower(string(b)), "upgrade: websocket") {
+
+	var reqArr []string
+	isWs := false
+	buffScanner := bufio.NewScanner(strings.NewReader(string(b)))
+	for buffScanner.Scan() {
+		if strings.ToLower(buffScanner.Text()) == "upgrade: websocket" {
+			isWs = true
+		}
+		reqArr = append(reqArr, buffScanner.Text())
+	}
+
+	if !isWs {
 		fwd.srcConn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\nNo valid websocket request"))
 		fmt.Printf("%s closed\n", fwd.connInfoPrefix)
 		return
@@ -65,7 +79,7 @@ func (fwd *WebForwarder) Start() {
 
 	remoteKind := "ssh"
 	remoteAddress := fwd.dstAddress
-	if strings.Contains(strings.ToLower(string(b)), "/ws-trojan") {
+	if strings.Contains(reqArr[0], fmt.Sprintf(" %s ", fwd.trjWsPath)) {
 		remoteAddress = fwd.trjAddress
 		remoteKind = "trojan"
 	}

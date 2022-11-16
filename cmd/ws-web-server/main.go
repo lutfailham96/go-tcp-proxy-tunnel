@@ -18,6 +18,7 @@ var (
 	tlsKey         = flag.String("key", "", "tls key pem")
 	backendAddress = flag.String("b", "127.0.0.1:8082", "backend proxy address")
 	trojanAddress  = flag.String("t", "127.0.0.1:433", "trojan backend address")
+	trojanWsPath   = flag.String("tp", "/ws-trojan", "trojan websocket path")
 	sni            = flag.String("sni", "", "server name identification")
 )
 
@@ -83,7 +84,7 @@ func setupTcpListener(secure bool) {
 		connId += 1
 		fwd := tcp.NewWebForwarder(connId, src, secure)
 		fwd.SetDstAddress(*backendAddress)
-		fwd.SetTrjAddress(*trojanAddress)
+		fwd.SetTrjConfig(*trojanAddress, *trojanWsPath)
 		fwd.SetSNI(*sni)
 		go fwd.Start()
 	}
