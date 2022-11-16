@@ -8,6 +8,8 @@ import (
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/pkg/proxy"
 	"net"
+	"os"
+	"path/filepath"
 )
 
 var (
@@ -70,12 +72,28 @@ func main() {
 			}
 			tlsConfig.Certificates = []tls.Certificate{cert}
 		} else {
-			serverConf, _, err := util.TLSGenerateConfig()
-			if err != nil {
-				fmt.Printf("Cannot generate tls key pair '%s'\n", err)
-				return
+			ex, _ := os.Executable()
+			exDir := filepath.Dir(ex)
+			crtPath := fmt.Sprintf("%s/server.crt", exDir)
+			keyPath := fmt.Sprintf("%s/server.key", exDir)
+			_, errCrt := os.Stat(crtPath)
+			_, errKey := os.Stat(keyPath)
+			if errCrt == nil && errKey == nil {
+				cert, err := tls.LoadX509KeyPair(crtPath, keyPath)
+				if err != nil {
+					fmt.Printf("Cannot read tls key pair '%s'\n", err)
+					os.Exit(1)
+				}
+				tlsConfig.Certificates = []tls.Certificate{cert}
+			} else {
+				serverConfig, _, err := util.TLSGenerateConfig()
+				if err != nil {
+					fmt.Printf("Cannot generate tls key pair '%s'\n", err)
+					return
+				}
+				tlsConfig.Certificates = serverConfig.Certificates
+				// TODO write generated cert & private key to `server.crt`, `server.key`
 			}
-			tlsConfig.Certificates = serverConf.Certificates
 		}
 		listener, err = tls.Listen("tcp", config.LocalAddressTCP.String(), tlsConfig)
 		if err != nil {
