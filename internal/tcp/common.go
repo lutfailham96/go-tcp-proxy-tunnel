@@ -12,6 +12,10 @@ type Host struct {
 }
 
 func CloseConnection(conn net.Conn) {
+	conn.Close()
+}
+
+func CloseConnectionDebug(conn net.Conn) {
 	err := conn.Close()
 	if err != nil {
 		fmt.Printf("Cannot close connection '%s'\n", err)
