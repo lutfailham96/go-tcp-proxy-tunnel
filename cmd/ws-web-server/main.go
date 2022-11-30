@@ -22,25 +22,25 @@ var (
 	trojanAddress  = flag.String("t", "127.0.0.1:433", "trojan backend address")
 	trojanWsPath   = flag.String("tp", "/ws-trojan", "trojan websocket path")
 	sni            = flag.String("sni", "", "server name identification")
-	logLevel       = flag.Uint64("lv", 3, "log level")
+	logLevel       = flag.Uint64("lv", 3, "log level [1-5]")
 )
 
 func main() {
 	flag.Parse()
 
-	logger := logger.NewBaseLogger(logger.LogLevel(*logLevel))
-	logger.PrintInfo(fmt.Sprintf("SNI:\t\t\t%s\n", *sni))
+	log := logger.NewBaseLogger(logger.LogLevel(*logLevel))
+	log.PrintInfo(fmt.Sprintf("SNI:\t\t\t%s\n", *sni))
 
 	if *sni == "" {
-		logger.PrintCritical(fmt.Sprintf("SNI required!"))
+		log.PrintCritical(fmt.Sprintf("SNI required!"))
 		os.Exit(1)
 	}
 
 	var tcpWg sync.WaitGroup
 
 	tcpWg.Add(2)
-	go setupTcpListener(false, logger)
-	go setupTcpListener(true, logger)
+	go setupTcpListener(false, log)
+	go setupTcpListener(true, log)
 
 	tcpWg.Wait()
 }
