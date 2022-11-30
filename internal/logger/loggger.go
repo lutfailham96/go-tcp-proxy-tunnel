@@ -8,12 +8,12 @@ const (
 	None LogLevel = iota + 1
 	Critical
 	Info
-	Error
 	Debug
+	Error
 )
 
 func (l LogLevel) String() string {
-	return [...]string{"None", "Critical", "Info", "Error", "Debug"}[l-1]
+	return [...]string{"None", "Critical", "Info", "Debug", "Error"}[l-1]
 }
 
 func (l LogLevel) EnumIndex() int {
