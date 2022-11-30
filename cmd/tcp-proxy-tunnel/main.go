@@ -129,7 +129,7 @@ func handleListener(listener net.Listener, config *common.Config, log *logger.Ba
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
-			fmt.Printf("Failed to accept connection '%s'\n", err)
+			log.PrintError(fmt.Sprintf("Failed to accept connection '%s'\n", err))
 			return
 		}
 		connId += 1
