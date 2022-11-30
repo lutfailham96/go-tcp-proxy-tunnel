@@ -4,7 +4,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
-	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"net"
@@ -28,7 +28,7 @@ var (
 func main() {
 	flag.Parse()
 
-	logger := common.NewBaseLogger(common.LogLevel(*logLevel))
+	logger := logger.NewBaseLogger(logger.LogLevel(*logLevel))
 	logger.PrintInfo(fmt.Sprintf("SNI:\t\t\t%s\n", *sni))
 
 	if *sni == "" {
@@ -45,7 +45,7 @@ func main() {
 	tcpWg.Wait()
 }
 
-func setupTcpListener(secure bool, log *common.BaseLogger) {
+func setupTcpListener(secure bool, log *logger.BaseLogger) {
 	var ln net.Listener
 	var err error
 

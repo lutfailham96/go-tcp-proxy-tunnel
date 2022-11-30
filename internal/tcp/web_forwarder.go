@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
-	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
 	"net"
 	"strings"
 )
@@ -22,7 +22,7 @@ type WebForwarder struct {
 	trjAddress     string
 	trjWsPath      string
 	erred          bool
-	logger         *common.BaseLogger
+	logger         *logger.BaseLogger
 }
 
 func NewWebForwarder(connId uint64, src net.Conn, secure bool) *WebForwarder {
@@ -54,7 +54,7 @@ func (fwd *WebForwarder) SetSNI(sni string) {
 	fwd.sni = sni
 }
 
-func (fwd *WebForwarder) SetLogger(l *common.BaseLogger) {
+func (fwd *WebForwarder) SetLogger(l *logger.BaseLogger) {
 	fwd.logger = l
 }
 
