@@ -79,7 +79,7 @@ func (fwd *WebForwarder) Start() {
 
 	if !isWs {
 		fwd.srcConn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\nNo valid websocket request"))
-		fwd.logger.PrintError(fmt.Sprintf("%s closed\n", fwd.connInfoPrefix))
+		fwd.logger.PrintInfo(fmt.Sprintf("%s closed\n", fwd.connInfoPrefix))
 		return
 	}
 
