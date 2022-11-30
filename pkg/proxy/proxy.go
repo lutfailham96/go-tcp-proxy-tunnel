@@ -125,7 +125,11 @@ func (p *Proxy) SetLogger(logger *logger.BaseLogger) {
 }
 
 func (p *Proxy) Start() {
-	defer tcp.CloseConnection(p.lConn)
+	if p.logger.LogLevel >= logger.Debug {
+		defer tcp.CloseConnectionDebug(p.lConn)
+	} else {
+		defer tcp.CloseConnection(p.lConn)
+	}
 
 	var err error
 	if p.tlsEnabled {
@@ -140,7 +144,11 @@ func (p *Proxy) Start() {
 		p.logger.PrintCritical(fmt.Sprintf("%s cannot dial remote connection '%s'\n", p.connectionInfoPrefix, err))
 		return
 	}
-	defer tcp.CloseConnection(p.rConn)
+	if p.logger.LogLevel >= logger.Debug {
+		defer tcp.CloseConnectionDebug(p.rConn)
+	} else {
+		defer tcp.CloseConnection(p.rConn)
+	}
 
 	p.logger.PrintInfo(fmt.Sprintf("%s opened %s >> %s\n", p.connectionInfoPrefix, p.lAddr, p.rAddr))
 

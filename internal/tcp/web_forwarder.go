@@ -59,7 +59,11 @@ func (fwd *WebForwarder) SetLogger(l *logger.BaseLogger) {
 }
 
 func (fwd *WebForwarder) Start() {
-	defer CloseConnection(fwd.srcConn)
+	if fwd.logger.LogLevel >= logger.Debug {
+		defer CloseConnectionDebug(fwd.srcConn)
+	} else {
+		defer CloseConnection(fwd.srcConn)
+	}
 
 	fwd.logger.PrintInfo(fmt.Sprintf("%s opened from %s\n", fwd.connInfoPrefix, fwd.srcConn.RemoteAddr()))
 
@@ -104,7 +108,11 @@ func (fwd *WebForwarder) Start() {
 		fwd.logger.PrintCritical(fmt.Sprintf("%s cannot connect to backend '%s'\n", fwd.connInfoPrefix, err))
 		return
 	}
-	defer CloseConnection(fwd.dstConn)
+	if fwd.logger.LogLevel >= logger.Debug {
+		defer CloseConnectionDebug(fwd.dstConn)
+	} else {
+		defer CloseConnection(fwd.dstConn)
+	}
 
 	// initial forward tcp connection to backend
 	fwd.dstConn.Write(b)
