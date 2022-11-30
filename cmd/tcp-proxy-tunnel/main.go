@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/pkg/proxy"
 	"net"
@@ -27,10 +28,13 @@ var (
 	tlsCert             = flag.String("cert", "", "tls cert pem file")
 	tlsKey              = flag.String("key", "", "tls key pem file")
 	proxyKind           = flag.String("k", "ssh", "proxy kind [ssh, trojan] (default: ssh)")
+	logLevel            = flag.Uint64("lv", 3, "log level [1-5]")
 )
 
 func main() {
 	flag.Parse()
+
+	log := logger.NewBaseLogger(logger.LogLevel(*logLevel))
 
 	cmdArgs := &common.CmdArgs{
 		LocalAddress:        *localAddr,
@@ -67,7 +71,7 @@ func main() {
 		if config.TLSCert != "" && config.TLSKey != "" {
 			cert, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
 			if err != nil {
-				fmt.Printf("Cannot load tls key pair '%s'\n", err)
+				log.PrintCritical(fmt.Sprintf("Cannot load tls key pair '%s'\n", err))
 				return
 			}
 			tlsConfig.Certificates = []tls.Certificate{cert}
@@ -81,14 +85,14 @@ func main() {
 			if errCrt == nil && errKey == nil {
 				cert, err := tls.LoadX509KeyPair(crtPath, keyPath)
 				if err != nil {
-					fmt.Printf("Cannot read tls key pair '%s'\n", err)
+					log.PrintCritical(fmt.Sprintf("Cannot read tls key pair '%s'\n", err))
 					os.Exit(1)
 				}
 				tlsConfig.Certificates = []tls.Certificate{cert}
 			} else {
 				serverConfig, _, err := util.TLSGenerateConfig()
 				if err != nil {
-					fmt.Printf("Cannot generate tls key pair '%s'\n", err)
+					log.PrintCritical(fmt.Sprintf("Cannot generate tls key pair '%s'\n", err))
 					return
 				}
 				tlsConfig.Certificates = serverConfig.Certificates
@@ -97,30 +101,30 @@ func main() {
 		}
 		listener, err = tls.Listen("tcp", config.LocalAddressTCP.String(), tlsConfig)
 		if err != nil {
-			fmt.Printf("Failed to open local port to listen: %s\n", err)
+			log.PrintCritical(fmt.Sprintf("Failed to open local port to listen: %s\n", err))
 			return
 		}
 	} else {
 		listener, err = net.Listen("tcp", config.LocalAddressTCP.String())
 	}
 	if err != nil {
-		fmt.Printf("Failed to open local port to listen: %s\n", err)
+		log.PrintCritical(fmt.Sprintf("Failed to open local port to listen: %s\n", err))
 		return
 	}
 
-	fmt.Printf("Mode\t\t: %s\n", config.ProxyInfo)
-	fmt.Printf("Proxy Kind\t: %s\n", config.ProxyKind)
-	fmt.Printf("Buffer size\t: %d\n", config.BufferSize)
-	fmt.Printf("Connection\t: %s\n", config.ConnectionInfo)
+	log.PrintInfo(fmt.Sprintf("Mode\t\t: %s\n", config.ProxyInfo))
+	log.PrintInfo(fmt.Sprintf("Proxy Kind\t: %s\n", config.ProxyKind))
+	log.PrintInfo(fmt.Sprintf("Buffer size\t: %d\n", config.BufferSize))
+	log.PrintInfo(fmt.Sprintf("Connection\t: %s\n", config.ConnectionInfo))
 	if config.TLSEnabled {
-		fmt.Printf("SNI Host\t: %s\n", config.SNIHost)
+		log.PrintInfo(fmt.Sprintf("SNI Host\t: %s\n", config.SNIHost))
 	}
-	fmt.Printf("\ngo-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP)
+	log.PrintInfo(fmt.Sprintf("\ngo-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP))
 
-	handleListener(listener, config)
+	handleListener(listener, config, log)
 }
 
-func handleListener(listener net.Listener, config *common.Config) {
+func handleListener(listener net.Listener, config *common.Config, log *logger.BaseLogger) {
 	var connId = uint64(0)
 	for {
 		conn, err := listener.Accept()
@@ -145,6 +149,7 @@ func handleListener(listener net.Listener, config *common.Config) {
 		p.SetrPayload(config.RemotePayload)
 		p.SetServerProxyMode(config.ServerProxyMode)
 		p.SetProxyKind(config.ProxyKind)
+		p.SetLogger(log)
 		go p.Start()
 	}
 }
