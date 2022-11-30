@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"net"
@@ -21,27 +22,30 @@ var (
 	trojanAddress  = flag.String("t", "127.0.0.1:433", "trojan backend address")
 	trojanWsPath   = flag.String("tp", "/ws-trojan", "trojan websocket path")
 	sni            = flag.String("sni", "", "server name identification")
+	logLevel       = flag.Uint64("lv", 3, "log level")
 )
 
 func main() {
 	flag.Parse()
 
+	logger := common.NewBaseLogger(common.LogLevel(*logLevel))
+	logger.PrintInfo(fmt.Sprintf("SNI:\t\t\t%s\n", *sni))
+
 	if *sni == "" {
-		fmt.Println("SNI required!")
+		logger.PrintCritical(fmt.Sprintf("SNI required!"))
 		os.Exit(1)
 	}
 
 	var tcpWg sync.WaitGroup
 
 	tcpWg.Add(2)
-	fmt.Printf("SNI:\t\t\t%s\n", *sni)
-	go setupTcpListener(false)
-	go setupTcpListener(true)
+	go setupTcpListener(false, logger)
+	go setupTcpListener(true, logger)
 
 	tcpWg.Wait()
 }
 
-func setupTcpListener(secure bool) {
+func setupTcpListener(secure bool, log *common.BaseLogger) {
 	var ln net.Listener
 	var err error
 
@@ -50,7 +54,7 @@ func setupTcpListener(secure bool) {
 		if *tlsCert != "" && *tlsKey != "" {
 			cer, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
 			if err != nil {
-				fmt.Printf("Cannot read tls key pair '%s'\n", err)
+				log.PrintCritical(fmt.Sprintf("Cannot read tls key pair '%s'\n", err))
 			}
 			tlsConfig = &tls.Config{
 				InsecureSkipVerify: true,
@@ -69,7 +73,7 @@ func setupTcpListener(secure bool) {
 			if errCrt == nil && errKey == nil {
 				cer, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
 				if err != nil {
-					fmt.Printf("Cannot read tls key pair '%s'\n", err)
+					log.PrintCritical(fmt.Sprintf("Cannot read tls key pair '%s'\n", err))
 					os.Exit(1)
 				}
 				tlsConfig = &tls.Config{
@@ -79,21 +83,21 @@ func setupTcpListener(secure bool) {
 			} else {
 				tlsConfig, _, err = util.TLSGenerateConfig()
 				if err != nil {
-					fmt.Printf("Cannot setup tls certificates '%s'\n", err)
+					log.PrintCritical(fmt.Sprintf("Cannot setup tls certificates '%s'\n", err))
 				}
 				// TODO write generated cert & private key to `server.crt`, `server.key`
 			}
 		}
 		tcp.ResolveAddr(*httpsAddress)
 		ln, err = tls.Listen("tcp", *httpsAddress, tlsConfig)
-		fmt.Printf("Secure TCP listen on:\t%s\n", *httpsAddress)
+		log.PrintInfo(fmt.Sprintf("Secure TCP listen on:\t%s\n", *httpsAddress))
 	} else {
 		tcp.ResolveAddr(*httpAddress)
 		ln, err = net.Listen("tcp", *httpAddress)
-		fmt.Printf("TCP listen on:\t\t%s\n", *httpAddress)
+		log.PrintInfo(fmt.Sprintf("TCP listen on:\t\t%s\n", *httpAddress))
 	}
 	if err != nil {
-		fmt.Printf("Cannot bind port '%s'\n", err)
+		log.PrintCritical(fmt.Sprintf("Cannot bind port '%s'\n", err))
 		return
 	}
 
@@ -101,7 +105,7 @@ func setupTcpListener(secure bool) {
 	for {
 		src, err := ln.Accept()
 		if err != nil {
-			fmt.Printf("Cannot accept connection '%s'\n", err)
+			log.PrintError(fmt.Sprintf("Cannot accept connection '%s'\n", err))
 			continue
 		}
 		connId += 1
@@ -109,6 +113,7 @@ func setupTcpListener(secure bool) {
 		fwd.SetDstAddress(*backendAddress)
 		fwd.SetTrjConfig(*trojanAddress, *trojanWsPath)
 		fwd.SetSNI(*sni)
+		fwd.SetLogger(log)
 		go fwd.Start()
 	}
 }

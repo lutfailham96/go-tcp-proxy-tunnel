@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
 	"net"
 	"strings"
 )
@@ -21,6 +22,7 @@ type WebForwarder struct {
 	trjAddress     string
 	trjWsPath      string
 	erred          bool
+	logger         *common.BaseLogger
 }
 
 func NewWebForwarder(connId uint64, src net.Conn, secure bool) *WebForwarder {
@@ -52,10 +54,14 @@ func (fwd *WebForwarder) SetSNI(sni string) {
 	fwd.sni = sni
 }
 
+func (fwd *WebForwarder) SetLogger(l *common.BaseLogger) {
+	fwd.logger = l
+}
+
 func (fwd *WebForwarder) Start() {
 	defer CloseConnection(fwd.srcConn)
 
-	fmt.Printf("%s opened from %s\n", fwd.connInfoPrefix, fwd.srcConn.RemoteAddr())
+	fwd.logger.PrintInfo(fmt.Sprintf("%s opened from %s\n", fwd.connInfoPrefix, fwd.srcConn.RemoteAddr()))
 
 	buff := make([]byte, fwd.bufferSize)
 	nr, err := fwd.srcConn.Read(buff)
@@ -73,7 +79,7 @@ func (fwd *WebForwarder) Start() {
 
 	if !isWs {
 		fwd.srcConn.Write([]byte("HTTP/1.1 500 Internal Server Error\r\nConnection: close\r\n\r\nNo valid websocket request"))
-		fmt.Printf("%s closed\n", fwd.connInfoPrefix)
+		fwd.logger.PrintError(fmt.Sprintf("%s closed\n", fwd.connInfoPrefix))
 		return
 	}
 
@@ -84,7 +90,7 @@ func (fwd *WebForwarder) Start() {
 		remoteKind = "trojan"
 	}
 
-	fmt.Printf("%s websocket (%s) session opened from %s\n", fwd.connInfoPrefix, remoteKind, fwd.srcConn.RemoteAddr())
+	fwd.logger.PrintInfo(fmt.Sprintf("%s websocket (%s) session opened from %s\n", fwd.connInfoPrefix, remoteKind, fwd.srcConn.RemoteAddr()))
 
 	if fwd.secure || (!fwd.secure && remoteKind != "ssh") {
 		fwd.dstConn, err = tls.Dial("tcp", remoteAddress, &tls.Config{
@@ -95,21 +101,21 @@ func (fwd *WebForwarder) Start() {
 		fwd.dstConn, err = net.Dial("tcp", remoteAddress)
 	}
 	if err != nil {
-		fmt.Printf("%s cannot connect to backend '%s'\n", fwd.connInfoPrefix, err)
+		fwd.logger.PrintCritical(fmt.Sprintf("%s cannot connect to backend '%s'\n", fwd.connInfoPrefix, err))
 		return
 	}
 	defer CloseConnection(fwd.dstConn)
 
 	// initial forward tcp connection to backend
 	fwd.dstConn.Write(b)
-	fmt.Printf("%s request\n", fwd.connInfoPrefix)
-	fmt.Println(string(b))
+	fwd.logger.PrintDebug(fmt.Sprintf("%s request\n", fwd.connInfoPrefix))
+	fwd.logger.PrintDebug(fmt.Sprintf("%s\n", string(b)))
 
 	go fwd.handleForwardData(fwd.dstConn, fwd.srcConn)
 	go fwd.handleForwardData(fwd.srcConn, fwd.dstConn)
 	<-fwd.errCh
 
-	fmt.Printf("%s closed\n", fwd.connInfoPrefix)
+	fwd.logger.PrintInfo(fmt.Sprintf("%s closed\n", fwd.connInfoPrefix))
 }
 
 func (fwd *WebForwarder) handleForwardData(src net.Conn, dst net.Conn) {
@@ -117,14 +123,14 @@ func (fwd *WebForwarder) handleForwardData(src net.Conn, dst net.Conn) {
 	for {
 		nr, err := src.Read(buff)
 		if err != nil {
-			//fmt.Printf("Cannot read buffer '%s'\n", err)
+			fwd.logger.PrintError(fmt.Sprintf("Cannot read buffer '%s'\n", err))
 			fwd.err()
 			return
 		}
 		b := buff[0:nr]
 		nr, err = dst.Write(b)
 		if err != nil {
-			//fmt.Printf("Cannot write buffer '%s'\n", err)
+			fwd.logger.PrintError(fmt.Sprintf("Cannot write buffer '%s'\n", err))
 			fwd.err()
 			return
 		}
