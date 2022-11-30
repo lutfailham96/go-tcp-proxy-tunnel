@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 	"net"
 	"strconv"
@@ -34,6 +35,7 @@ type Proxy struct {
 	connId               uint64
 	serverProxyMode      bool
 	wsUpgradeInitialized bool
+	logger               *logger.BaseLogger
 }
 
 func NewProxy(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr, secure bool) *Proxy {
@@ -83,12 +85,12 @@ func (p *Proxy) SetServerProxyMode(enabled bool) {
 func (p *Proxy) SetServerHost(server string) {
 	sHost, sPort, err := net.SplitHostPort(server)
 	if err != nil {
-		fmt.Printf("%s cannot parse server host port '%s'\n", p.connectionInfoPrefix, err)
+		p.logger.PrintCritical(fmt.Sprintf("%s cannot parse server host port '%s'\n", p.connectionInfoPrefix, err))
 		return
 	}
 	sPortParsed, err := strconv.ParseUint(sPort, 10, 64)
 	if err != nil {
-		fmt.Printf("%s cannot parse server port '%s'\n", p.connectionInfoPrefix, err)
+		p.logger.PrintCritical(fmt.Sprintf("%s cannot parse server port '%s'\n", p.connectionInfoPrefix, err))
 		return
 	}
 	p.sHost = tcp.Host{
@@ -118,6 +120,10 @@ func (p *Proxy) SetProxyKind(proxyKind string) {
 	p.connectionInfoPrefix = connInfoPrefix
 }
 
+func (p *Proxy) SetLogger(logger *logger.BaseLogger) {
+	p.logger = logger
+}
+
 func (p *Proxy) Start() {
 	defer tcp.CloseConnection(p.lConn)
 
@@ -131,19 +137,19 @@ func (p *Proxy) Start() {
 		p.rConn, err = net.DialTCP("tcp", nil, p.rAddr)
 	}
 	if err != nil {
-		fmt.Printf("%s cannot dial remote connection '%s'\n", p.connectionInfoPrefix, err)
+		p.logger.PrintCritical(fmt.Sprintf("%s cannot dial remote connection '%s'\n", p.connectionInfoPrefix, err))
 		return
 	}
 	defer tcp.CloseConnection(p.rConn)
 
-	fmt.Printf("%s opened %s >> %s\n", p.connectionInfoPrefix, p.lAddr, p.rAddr)
+	p.logger.PrintInfo(fmt.Sprintf("%s opened %s >> %s\n", p.connectionInfoPrefix, p.lAddr, p.rAddr))
 
 	go p.handleForwardData(p.lConn, p.rConn)
 	if !p.serverProxyMode {
 		go p.handleForwardData(p.rConn, p.lConn)
 	}
 	<-p.errSig
-	fmt.Printf("%s closed (%d bytes sent, %d bytes received)\n", p.connectionInfoPrefix, p.bytesSent, p.bytesReceived)
+	p.logger.PrintInfo(fmt.Sprintf("%s closed (%d bytes sent, %d bytes received)\n", p.connectionInfoPrefix, p.bytesSent, p.bytesReceived))
 }
 
 func (p *Proxy) err() {
@@ -161,7 +167,7 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 	for {
 		n, err := src.Read(buffer)
 		if err != nil {
-			//fmt.Printf("Cannot read buffer from source '%s'\n", err)
+			p.logger.PrintError(fmt.Sprintf("Cannot read buffer from source '%s'\n", err))
 			p.err()
 			return
 		}
@@ -179,7 +185,7 @@ func (p *Proxy) handleForwardData(src, dst net.Conn) {
 			n, err = dst.Write(connBuff)
 		}
 		if err != nil {
-			//fmt.Printf("Cannot write buffer to destination '%s'\n", err)
+			p.logger.PrintError(fmt.Sprintf("Cannot write buffer to destination '%s'\n", err))
 			p.err()
 			return
 		}
@@ -197,7 +203,7 @@ func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 		return
 	}
 
-	fmt.Printf("%s %s >> %s >> %s\n", p.connectionInfoPrefix, src.RemoteAddr(), p.conn.LocalAddr(), dst.RemoteAddr())
+	p.logger.PrintInfo(fmt.Sprintf("%s %s >> %s >> %s\n", p.connectionInfoPrefix, src.RemoteAddr(), p.conn.LocalAddr(), dst.RemoteAddr()))
 
 	var respArr []string
 	doUpgrade := false
@@ -211,20 +217,20 @@ func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 
 	if p.serverProxyMode {
 		if doUpgrade {
-			fmt.Printf("%s connection upgrade to Websocket\n", p.connectionInfoPrefix)
+			p.logger.PrintInfo(fmt.Sprintf("%s connection upgrade to Websocket\n", p.connectionInfoPrefix))
 			*connBuff = []byte("HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\n\r\n")
 			p.wsUpgradeInitialized = true
 		}
 	} else {
 		if p.proxyKind == "ssh" && strings.Contains(respArr[0], "CONNECT ") {
 			*connBuff = p.lPayload
-			fmt.Println(string(*connBuff))
+			p.logger.PrintDebug(fmt.Sprintf("%s\n", string(*connBuff)))
 		}
 		if p.proxyKind == "trojan" {
 			reqPath := strings.Split(respArr[0], " ")[1]
 			newReqPath := fmt.Sprintf(" wss://%s%s ", p.sniHost, reqPath)
 			*connBuff = []byte(strings.Replace(string(*connBuff), fmt.Sprintf(" %s ", reqPath), newReqPath, -1))
-			fmt.Println(string(*connBuff))
+			p.logger.PrintDebug(fmt.Sprintf("%s\n", string(*connBuff)))
 		}
 	}
 
@@ -236,7 +242,7 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 		return
 	}
 
-	fmt.Printf("%s %s << %s << %s\n", p.connectionInfoPrefix, dst.RemoteAddr(), p.conn.LocalAddr(), src.RemoteAddr())
+	p.logger.PrintInfo(fmt.Sprintf("%s %s << %s << %s\n", p.connectionInfoPrefix, dst.RemoteAddr(), p.conn.LocalAddr(), src.RemoteAddr()))
 
 	var respArr []string
 	buffScanner := bufio.NewScanner(strings.NewReader(string(*connBuff)))
@@ -253,7 +259,7 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 
 	if !p.serverProxyMode {
 		*connBuff = []byte(strings.Join(respArr, "\r\n") + "\r\n")
-		fmt.Println(string(*connBuff))
+		p.logger.PrintDebug(fmt.Sprintf("%s\n", string(*connBuff)))
 	}
 
 	p.rInitialized = true
