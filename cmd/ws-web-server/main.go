@@ -8,6 +8,7 @@ import (
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"net"
 	"os"
+	"path/filepath"
 	"sync"
 )
 
@@ -56,9 +57,31 @@ func setupTcpListener(secure bool) {
 				Certificates:       []tls.Certificate{cer},
 			}
 		} else {
-			tlsConfig, _, err = util.TLSGenerateConfig()
+			ex, err := os.Executable()
 			if err != nil {
-				fmt.Printf("Cannot setup tls certificates '%s'\n", err)
+				panic(err)
+			}
+			exDir := filepath.Dir(ex)
+			crtPath := fmt.Sprintf("%s/server.crt", exDir)
+			keyPath := fmt.Sprintf("%s/server.key", exDir)
+			_, errCrt := os.Stat(crtPath)
+			_, errKey := os.Stat(keyPath)
+			if errCrt == nil && errKey == nil {
+				cer, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
+				if err != nil {
+					fmt.Printf("Cannot read tls key pair '%s'\n", err)
+					os.Exit(1)
+				}
+				tlsConfig = &tls.Config{
+					InsecureSkipVerify: true,
+					Certificates:       []tls.Certificate{cer},
+				}
+			} else {
+				tlsConfig, _, err = util.TLSGenerateConfig()
+				if err != nil {
+					fmt.Printf("Cannot setup tls certificates '%s'\n", err)
+				}
+				// TODO write generated cert & private key to `server.crt`, `server.key`
 			}
 		}
 		tcp.ResolveAddr(*httpsAddress)
