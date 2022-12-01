@@ -25,5 +25,13 @@ jobs:
         with:
           go-version: ${{ matrix.go-version }}
 
+      - name: Run Formatter
+        run: make format
+
       - name: Run Build
         run: make build
+
+      - name: Run Program
+        run: |-
+          ./go-tcp-proxy-tunnel --help \
+            && ./go-ws-web-server --help
