@@ -31,17 +31,24 @@ $ git clone https://github.com/lutfailham96/go-tcp-proxy-tunnel \
 
 ```
 $ go-tcp-proxy-tunnel --help
-Usage of go-tcp-proxy-tunnel:
   -bs uint
     	connection buffer size
   -c string
     	load config from JSON file
+  -cert string
+    	tls cert pem file
   -dsr
     	disable server host resolve
   -ip string
     	remote TCP payload replacer
+  -k string
+    	proxy kind [ssh, trojan] (default: ssh) (default "ssh")
+  -key string
+    	tls key pem file
   -l string
     	local address (default "127.0.0.1:8082")
+  -lv uint
+    	log level [1-5] (default 3)
   -op string
     	local TCP payload replacer
   -r string
@@ -63,10 +70,13 @@ Accept incoming connection to use as `SSH` tunnel
 $ go-tcp-proxy-tunnel \
     -l 127.0.0.1:8082 \
     -r 127.0.0.1:22 \
-    -sv
+    -sv \
+    -lv 3
 
 Mode		: server proxy
+Proxy Kind	: ssh
 Buffer size	: 65535
+Connection	: insecure
 
 go-tcp-proxy-tunnel proxing from 127.0.0.1:8082 to 127.0.0.1:22
 ```
@@ -97,9 +107,12 @@ server {
 
 or run using `go-ws-web-server` binary for simplicity
 ```shell
-$ sudo go-ws-web-server
+$ sudo go-ws-web-server \
+    -sni localhost
 
-Websocket web server running on 0.0.0.0:80, 0.0.0.0:443
+SNI                     : localhost
+Secure TCP listen on    : 127.0.0.1:443
+TCP listen on           : 127.0.0.1:80
 ```
 
 ### Client Example
@@ -115,11 +128,12 @@ $ go-tcp-proxy-tunnel \
     -op "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
 
 
-Mode		: client proxy
-Buffer size	: 65535
-Connection	: insecure
+Mode            : client proxy
+Proxy Kind      : ssh
+Buffer size     : 65535
+Connection      : insecure
 
-Proxying from 127.0.0.1:9999 to 127.0.0.1:10443
+go-tcp-proxy-tunnel proxing from 127.0.0.1:9999 to 127.0.0.1:10443
 ```
 
 `stunnel` configuration
@@ -152,12 +166,13 @@ $ go-tcp-proxy-tunnel \
     -op "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Upgrade: websocket[crlf]Connection: keep-alive[crlf][crlf]"
 
 
-Mode		: client proxy
-Buffer size	: 65535
-Connection	: secure (TLS)
-SNI Host	: cloudflare.com
+Mode            : client proxy
+Proxy Kind      : ssh
+Buffer size     : 65535
+Connection      : secure (TLS)
+SNI Host        : cloudflare.com
 
-Proxying from 127.0.0.1:9999 to 104.15.50.1:443
+go-tcp-proxy-tunnel proxing from 127.0.0.1:9999 to 104.15.50.5:443
 ```
 
 Tunnel over `SSH` connection
@@ -184,6 +199,7 @@ $ ssh -o "ProxyCommand=ncat --proxy 127.0.0.1:9999 %h %p" -v4ND 1080 my-user@loc
   "BufferSize": 65535,
   "ServerProxyMode": false,
   "ProxyInfo": "client proxy",
+  "ProxyKind": "ssh",
   "LocalAddress": "127.0.0.1:9999",
   "RemoteAddress": "127.0.0.1:10443",
   "LocalPayload": "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Connection: keep-alive[crlf]Upgrade: websocket[crlf][crlf]",
@@ -199,6 +215,7 @@ $ ssh -o "ProxyCommand=ncat --proxy 127.0.0.1:9999 %h %p" -v4ND 1080 my-user@loc
   "BufferSize": 65535,
   "ServerProxyMode": false,
   "ProxyInfo": "client proxy",
+  "ProxyKind": "ssh",
   "LocalAddress": "127.0.0.1:9999",
   "RemoteAddress": "104.15.50.1:443",
   "LocalPayload": "GET ws://[sni] HTTP/1.1[crlf]Host: [host][crlf]Connection: keep-alive[crlf]Upgrade: websocket[crlf][crlf]",
