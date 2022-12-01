@@ -231,7 +231,17 @@ Example run `go-tcp-proxy-tunnel` using config file
 $ go-tcp-proxy-tunnel -c config.json
 ```
 
+### Log Level
+Default log level value `3`, add or pass `-lv` arguments if you want to change the verbosity of logs
+
+| Log Level | Second Header |
+|-----------|---------------|
+| 1         | `None`        |
+| 2         | `Critical`    |
+| 3         | `Info`        |
+| 4         | `Debug`       |
+| 5         | `Error`       |
+
 ### Todo
 
 * Add unit test
-* Add linting CI using GitHub workflow
