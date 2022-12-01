@@ -29,12 +29,13 @@ func main() {
 	flag.Parse()
 
 	log := logger.NewBaseLogger(logger.LogLevel(*logLevel))
-	log.PrintInfo(fmt.Sprintf("SNI:\t\t\t%s\n", *sni))
 
 	if *sni == "" {
 		log.PrintCritical(fmt.Sprintf("SNI required!"))
 		os.Exit(1)
 	}
+
+	log.PrintInfo(fmt.Sprintf("SNI:\t\t\t%s\n", *sni))
 
 	var tcpWg sync.WaitGroup
 
@@ -51,7 +52,7 @@ func setupTcpListener(secure bool, log *logger.BaseLogger) {
 
 	if secure {
 		var tlsConfig *tls.Config
-		if *tlsCert != "" && *tlsKey != "" {
+		if *tlsCert != "" || *tlsKey != "" {
 			cer, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
 			if err != nil {
 				log.PrintCritical(fmt.Sprintf("Cannot read tls key pair '%s'\n", err))
@@ -70,7 +71,7 @@ func setupTcpListener(secure bool, log *logger.BaseLogger) {
 			keyPath := fmt.Sprintf("%s/server.key", exDir)
 			_, errCrt := os.Stat(crtPath)
 			_, errKey := os.Stat(keyPath)
-			if errCrt == nil && errKey == nil {
+			if errCrt == nil || errKey == nil {
 				cer, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
 				if err != nil {
 					log.PrintCritical(fmt.Sprintf("Cannot read tls key pair '%s'\n", err))

@@ -68,7 +68,7 @@ func main() {
 			InsecureSkipVerify: true,
 			ServerName:         config.SNIHost,
 		}
-		if config.TLSCert != "" && config.TLSKey != "" {
+		if config.TLSCert != "" || config.TLSKey != "" {
 			cert, err := tls.LoadX509KeyPair(*tlsCert, *tlsKey)
 			if err != nil {
 				log.PrintCritical(fmt.Sprintf("Cannot load tls key pair '%s'\n", err))
@@ -82,7 +82,7 @@ func main() {
 			keyPath := fmt.Sprintf("%s/server.key", exDir)
 			_, errCrt := os.Stat(crtPath)
 			_, errKey := os.Stat(keyPath)
-			if errCrt == nil && errKey == nil {
+			if errCrt == nil || errKey == nil {
 				cert, err := tls.LoadX509KeyPair(crtPath, keyPath)
 				if err != nil {
 					log.PrintCritical(fmt.Sprintf("Cannot read tls key pair '%s'\n", err))
