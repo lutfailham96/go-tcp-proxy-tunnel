@@ -89,9 +89,11 @@ func (fwd *WebForwarder) Start() {
 
 	remoteKind := "ssh"
 	remoteAddress := fwd.dstAddress
-	if strings.Contains(reqArr[0], fmt.Sprintf(" %s ", fwd.trjWsPath)) {
+	if strings.Contains(reqArr[0], fmt.Sprintf("%s ", fwd.trjWsPath)) {
 		remoteAddress = fwd.trjAddress
 		remoteKind = "trojan"
+		// rewrite request path to trojan path
+		reqArr[0] = strings.Replace(reqArr[0], strings.Split(reqArr[0], " ")[1], fwd.trjWsPath, -1)
 	}
 
 	fwd.logger.PrintInfo(fmt.Sprintf("%s websocket (%s) session opened from %s\n", fwd.connInfoPrefix, remoteKind, fwd.srcConn.RemoteAddr()))
