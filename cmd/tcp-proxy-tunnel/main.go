@@ -116,9 +116,7 @@ func main() {
 	log.PrintInfo(fmt.Sprintf("Proxy Kind\t: %s\n", config.ProxyKind))
 	log.PrintInfo(fmt.Sprintf("Buffer size\t: %d\n", config.BufferSize))
 	log.PrintInfo(fmt.Sprintf("Connection\t: %s\n", config.ConnectionInfo))
-	if config.TLSEnabled {
-		log.PrintInfo(fmt.Sprintf("SNI Host\t: %s\n", config.SNIHost))
-	}
+	log.PrintInfo(fmt.Sprintf("SNI Host\t: %s\n", config.SNIHost))
 	log.PrintInfo(fmt.Sprintf("\ngo-tcp-proxy-tunnel proxing from %v to %v\n", config.LocalAddressTCP, config.RemoteAddressTCP))
 
 	handleListener(listener, config, log)
@@ -143,8 +141,8 @@ func handleListener(listener net.Listener, config *common.Config, log *logger.Ba
 		}
 		if config.TLSEnabled {
 			p.SetEnableTLS(config.TLSEnabled)
-			p.SetSNIHost(config.SNIHost)
 		}
+		p.SetSNIHost(config.SNIHost)
 		p.SetlPayload(config.LocalPayload)
 		p.SetrPayload(config.RemotePayload)
 		p.SetServerProxyMode(config.ServerProxyMode)
