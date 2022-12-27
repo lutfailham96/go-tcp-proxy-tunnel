@@ -231,6 +231,25 @@ Example run `go-tcp-proxy-tunnel` using config file
 $ go-tcp-proxy-tunnel -c config.json
 ```
 
+### Run via Docker
+Pull the images image
+```shell
+$ docker pull lutfailham/go-tcp-proxy-tunnel:latest
+```
+**Server Mode**
+```shell
+Example:
+- dropbear host address: 127.0.0.1:442
+$ docker run --rm -it \
+    --name go-tcp-proxy-tunnel \
+    -e PROXY_DROPBEAR=127.0.0.1:442 \
+    --net=host \
+    -p "80:80" \
+    -p "443:443" \
+    -p "8082:8082" \
+    lutfailham/go-tcp-proxy-tunnel:latest-alpine
+```
+
 ### Log Level
 Default log level value `3`, add or pass `-lv` arguments if you want to change the verbosity of logs
 
@@ -244,4 +263,5 @@ Default log level value `3`, add or pass `-lv` arguments if you want to change t
 
 ### Todo
 
-* Add unit test
+- Add unit test
+- Improve documentation
