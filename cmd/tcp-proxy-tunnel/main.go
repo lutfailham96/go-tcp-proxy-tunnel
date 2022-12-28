@@ -142,6 +142,9 @@ func handleListener(listener net.Listener, config *common.Config, log *logger.Ba
 		if config.TLSEnabled {
 			p.SetEnableTLS(config.TLSEnabled)
 		}
+		if config.SNIHost == "" {
+			config.SNIHost = "localhost"
+		}
 		p.SetSNIHost(config.SNIHost)
 		p.SetlPayload(config.LocalPayload)
 		p.SetrPayload(config.RemotePayload)
