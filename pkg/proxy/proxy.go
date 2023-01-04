@@ -4,11 +4,12 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
-	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
-	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 )
 
 type Proxy struct {

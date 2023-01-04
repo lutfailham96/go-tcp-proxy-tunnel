@@ -4,9 +4,10 @@ import (
 	"bufio"
 	"crypto/tls"
 	"fmt"
-	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
 	"net"
 	"strings"
+
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
 )
 
 type WebForwarder struct {

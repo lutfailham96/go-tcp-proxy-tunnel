@@ -3,9 +3,10 @@ package common
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 	"net"
 	"os"
+
+	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
 )
 
 type Config struct {

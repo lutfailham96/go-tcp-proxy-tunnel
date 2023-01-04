@@ -4,13 +4,14 @@ import (
 	"crypto/tls"
 	"flag"
 	"fmt"
+	"net"
+	"os"
+	"path/filepath"
+
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/common"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/util"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/pkg/proxy"
-	"net"
-	"os"
-	"path/filepath"
 )
 
 var (
