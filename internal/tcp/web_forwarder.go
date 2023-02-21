@@ -61,9 +61,13 @@ func (fwd *WebForwarder) SetLogger(l *logger.BaseLogger) {
 
 func (fwd *WebForwarder) Start() {
 	if fwd.logger.LogLevel >= logger.Debug {
-		defer CloseConnectionDebug(fwd.srcConn)
+		defer func(conn net.Conn) {
+			CloseConnectionDebug(conn)
+		}(fwd.srcConn)
 	} else {
-		defer CloseConnection(fwd.srcConn)
+		defer func(conn net.Conn) {
+			CloseConnection(conn)
+		}(fwd.srcConn)
 	}
 
 	fwd.logger.PrintInfo(fmt.Sprintf("%s opened from %s\n", fwd.connInfoPrefix, fwd.srcConn.RemoteAddr()))
@@ -112,9 +116,13 @@ func (fwd *WebForwarder) Start() {
 		return
 	}
 	if fwd.logger.LogLevel >= logger.Debug {
-		defer CloseConnectionDebug(fwd.dstConn)
+		defer func(conn net.Conn) {
+			CloseConnectionDebug(conn)
+		}(fwd.dstConn)
 	} else {
-		defer CloseConnection(fwd.dstConn)
+		defer func(conn net.Conn) {
+			CloseConnection(conn)
+		}(fwd.dstConn)
 	}
 
 	// initial forward tcp connection to backend

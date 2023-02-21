@@ -127,9 +127,13 @@ func (p *Proxy) SetLogger(logger *logger.BaseLogger) {
 
 func (p *Proxy) Start() {
 	if p.logger.LogLevel >= logger.Debug {
-		defer tcp.CloseConnectionDebug(p.lConn)
+		defer func(conn net.Conn) {
+			tcp.CloseConnectionDebug(conn)
+		}(p.lConn)
 	} else {
-		defer tcp.CloseConnection(p.lConn)
+		defer func(conn net.Conn) {
+			tcp.CloseConnection(conn)
+		}(p.lConn)
 	}
 
 	var err error
@@ -146,9 +150,13 @@ func (p *Proxy) Start() {
 		return
 	}
 	if p.logger.LogLevel >= logger.Debug {
-		defer tcp.CloseConnectionDebug(p.rConn)
+		defer func(conn net.Conn) {
+			tcp.CloseConnectionDebug(conn)
+		}(p.rConn)
 	} else {
-		defer tcp.CloseConnection(p.rConn)
+		defer func(conn net.Conn) {
+			tcp.CloseConnection(conn)
+		}(p.rConn)
 	}
 
 	p.logger.PrintInfo(fmt.Sprintf("%s opened %s >> %s\n", p.connectionInfoPrefix, p.lAddr, p.rAddr))
