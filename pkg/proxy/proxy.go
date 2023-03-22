@@ -5,8 +5,10 @@ import (
 	"crypto/tls"
 	"fmt"
 	"net"
+	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/logger"
 	"github.com/lutfailham96/go-tcp-proxy-tunnel/internal/tcp"
@@ -23,6 +25,7 @@ type Proxy struct {
 	rAddr                *net.TCPAddr
 	sHost                tcp.Host
 	tlsEnabled           bool
+	earlyPinger          bool
 	sniHost              string
 	lPayload             []byte
 	rPayload             []byte
@@ -56,6 +59,7 @@ func NewProxy(connId uint64, conn net.Conn, lAddr, rAddr *net.TCPAddr, secure bo
 		connId:               connId,
 		serverProxyMode:      false,
 		wsUpgradeInitialized: false,
+		earlyPinger:          true,
 	}
 }
 
@@ -123,6 +127,10 @@ func (p *Proxy) SetProxyKind(proxyKind string) {
 
 func (p *Proxy) SetLogger(logger *logger.BaseLogger) {
 	p.logger = logger
+}
+
+func (p *Proxy) SetEarlyPinger(enabled bool) {
+	p.earlyPinger = enabled
 }
 
 func (p *Proxy) Start() {
@@ -240,6 +248,16 @@ func (p *Proxy) handleOutboundData(src, dst net.Conn, connBuff *[]byte) {
 		}
 	} else {
 		if p.proxyKind == "ssh" && strings.Contains(respArr[0], "CONNECT ") {
+			if p.earlyPinger {
+				if p.sniHost != "" && p.sniHost != "localhost" {
+					go func() {
+						p.doPing(p.sniHost)
+					}()
+				}
+				go func() {
+					p.doPing(p.rAddr.String())
+				}()
+			}
 			*connBuff = p.lPayload
 			p.logger.PrintDebug(fmt.Sprintf("%s\n", string(*connBuff)))
 		}
@@ -280,4 +298,16 @@ func (p *Proxy) handleInboundData(src, dst net.Conn, connBuff *[]byte) {
 	}
 
 	p.rInitialized = true
+}
+
+func (p *Proxy) doPing(host string) {
+	client := &http.Client{
+		Timeout: time.Duration(time.Second * 3),
+	}
+	go func() {
+		client.Get("https://" + host)
+	}()
+	go func() {
+		client.Get("http://" + host)
+	}()
 }
